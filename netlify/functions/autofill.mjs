@@ -691,8 +691,24 @@ export async function handleAutofill(event, deps) {
   try {
     const prompt = buildPrompt(extracted, url);
     let raw;
+    const busy = (e) => e && (e.status === 503 || e.status === 500 || e.status === 429);
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const tryModels = async () => {
+      const models = [model, "gemini-flash-latest", "gemini-flash-lite-latest"].filter((m, i, a) => a.indexOf(m) === i);
+      let last;
+      for (let i = 0; i < models.length; i++) {
+        try {
+          return await callGemini({ fetchFn, apiKey, model: models[i], prompt });
+        } catch (e) {
+          last = e;
+          if (!busy(e) && !(e && e.status === 404)) throw e;
+          await sleep(800);
+        }
+      }
+      throw last;
+    };
     try {
-      raw = await callGemini({ fetchFn, apiKey, model, prompt });
+      raw = await tryModels();
     } catch (e1) {
       const m1 = String((e1 && e1.details && e1.details.error && e1.details.error.message) || "");
       if (e1 && e1.status === 404 && model !== "gemini-flash-latest") {

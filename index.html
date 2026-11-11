@@ -663,6 +663,7 @@ textarea.short { min-height: 64px; }
             <input type="url" id="f-url" name="url" placeholder="https://" inputmode="url" data-testid="f-url" />
             <button type="button" class="btn" id="btn-autofill" data-testid="btn-autofill">자동 채우기</button>
           </div>
+          <p class="hint" id="autofill-status" role="status" aria-live="polite" style="margin:6px 0 0;font-weight:600"></p>
           <details class="paste-details" id="paste-details">
             <summary>본문 직접 붙여넣기</summary>
             <p class="hint" style="margin:8px 0">유료 기사거나 페이지를 가져오지 못할 때, 본문을 붙여넣고 자동 채우기를 눌러 주세요.</p>
@@ -1415,12 +1416,15 @@ try {
     }).slice().sort(byDateDesc);
   }
 
-  function toast(msg) {
+  function toast(msg, ms) {
     var el = $("toast");
+    var openDlg = document.querySelector("dialog[open]");
+    var host = openDlg || document.body;
+    if (el.parentNode !== host) host.appendChild(el);
     el.textContent = msg;
     el.classList.add("show");
     clearTimeout(toast._t);
-    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2800);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, ms || 2800);
   }
 
   function findEntry(id) {
@@ -1868,6 +1872,9 @@ try {
       $("f-url").focus();
       return;
     }
+    var st = $("autofill-status");
+    function setStatus(m, bad) { if (st) { st.textContent = m || ""; st.style.color = bad ? "#b3261e" : ""; } }
+    setStatus("기사를 읽고 정리하는 중이에요. 10~30초쯤 걸릴 수 있어요.");
     setAutofillBusy(true);
     try {
       var res = await fetch("/.netlify/functions/autofill", {
@@ -1878,13 +1885,18 @@ try {
       var data = {};
       try { data = await res.json(); } catch (e) { data = {}; }
       if (!res.ok) {
-        toast((data && data.error) || "자동 채우기에 실패했어요.");
+        var em = (data && data.error) || ("자동 채우기에 실패했어요. (오류 코드 " + res.status + ")");
+        if (res.status === 404) em = "자동 채우기 기능을 찾지 못했어요 (404). autofill.mjs가 netlify/functions 폴더 안에 있는지, 배포가 끝났는지 확인해 주세요.";
+        setStatus(em, true);
+        toast(em, 6000);
         return;
       }
       applyAutofill(data);
+      setStatus("내용을 채웠어요. 확인한 뒤 저장해 주세요.");
       toast("내용을 채웠어요. 확인한 뒤 저장해 주세요.");
     } catch (err) {
-      toast("자동 채우기에 실패했어요. 네트워크를 확인해 주세요.");
+      setStatus("자동 채우기에 실패했어요. 네트워크를 확인해 주세요.", true);
+      toast("자동 채우기에 실패했어요. 네트워크를 확인해 주세요.", 6000);
     } finally {
       setAutofillBusy(false);
     }

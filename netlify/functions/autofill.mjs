@@ -576,7 +576,7 @@ export async function fetchArticleHtml(url, fetchFn) {
   return { html, finalUrl };
 }
 
-export async function callGemini({ fetchFn, apiKey, model, prompt }) {
+export async function callGemini({ fetchFn, apiKey, model, prompt, noSchema }) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model
   )}:generateContent`;
@@ -594,7 +594,7 @@ export async function callGemini({ fetchFn, apiKey, model, prompt }) {
         generationConfig: {
           temperature: 0.2,
           responseMimeType: "application/json",
-          responseSchema: RESPONSE_SCHEMA
+          ...(noSchema ? {} : { responseSchema: RESPONSE_SCHEMA })
         }
       })
     },
@@ -689,12 +689,20 @@ export async function handleAutofill(event, deps) {
 
   const model = String(env.GEMINI_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
   try {
-    const raw = await callGemini({
-      fetchFn,
-      apiKey,
-      model,
-      prompt: buildPrompt(extracted, url)
-    });
+    const prompt = buildPrompt(extracted, url);
+    let raw;
+    try {
+      raw = await callGemini({ fetchFn, apiKey, model, prompt });
+    } catch (e1) {
+      const m1 = String((e1 && e1.details && e1.details.error && e1.details.error.message) || "");
+      if (e1 && e1.status === 404 && model !== "gemini-flash-latest") {
+        raw = await callGemini({ fetchFn, apiKey, model: "gemini-flash-latest", prompt });
+      } else if (e1 && e1.status === 400 && !/api key/i.test(m1)) {
+        raw = await callGemini({ fetchFn, apiKey, model, prompt, noSchema: true });
+      } else {
+        throw e1;
+      }
+    }
     const result = normalizeAutofill(raw, extracted);
     if (!result.title && extracted.title) result.title = extracted.title;
     if (!result.press && extracted.press) result.press = extracted.press;
@@ -704,8 +712,26 @@ export async function handleAutofill(event, deps) {
     if (err instanceof SyntaxError) {
       return json(502, { error: "글을 정리한 결과를 읽지 못했어요. 잠시 후 다시 시도해 주세요." });
     }
-    return json(502, { error: "글을 정리하는 중 오류가 났어요. 잠시 후 다시 시도해 주세요." });
+    return json(502, { error: describeGeminiError(err, model) });
   }
+}
+
+function describeGeminiError(err, model) {
+  const st = err && err.status;
+  const d = (err && err.details && err.details.error) || {};
+  const msg = String(d.message || "").slice(0, 200);
+  const reason = String(d.status || "");
+  let head = "글을 정리하는 중 오류가 났어요.";
+  if (err && err.name === "AbortError") head = "Gemini 응답이 너무 늦어요. 잠시 후 다시 시도해 주세요.";
+  else if (err && err.message === "gemini_blocked") head = "Gemini가 이 글 정리를 거절했어요.";
+  else if (err && err.message === "gemini_empty") head = "Gemini가 빈 답을 보냈어요. 다시 시도해 주세요.";
+  else if (st === 400 && /api key|API_KEY/i.test(msg + reason)) head = "Gemini API 키가 올바르지 않아요. AI Studio에서 키를 다시 복사해 Netlify에 넣어 주세요.";
+  else if (st === 401 || st === 403) head = "Gemini API 키 권한 문제예요. 키를 다시 확인해 주세요.";
+  else if (st === 404) head = "Gemini 모델(" + model + ")을 찾지 못했어요.";
+  else if (st === 429) head = "Gemini 무료 사용량을 잠시 넘었어요. 1분쯤 뒤 다시 시도해 주세요.";
+  else if (st >= 500) head = "Gemini 서버가 잠시 불안정해요. 잠시 후 다시 시도해 주세요.";
+  const detail = st ? " [" + st + (reason ? " " + reason : "") + (msg ? ": " + msg : "") + "]" : (err && err.message ? " [" + err.message + "]" : "");
+  return head + detail;
 }
 
 export async function handler(event, context) {

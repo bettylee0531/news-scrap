@@ -11,7 +11,7 @@ export const PRESET_TAGS = [
 export const WHO_OPTIONS = ["대출자/차주", "예금자/투자자", "기업/산업", "기타"];
 
 export const DEFAULT_MODEL = "gemini-3.8-flash";
-export const MAX_ARTICLE_CHARS = 12000;
+export const MAX_ARTICLE_CHARS = 8000;
 export const FETCH_TIMEOUT_MS = 12000;
 export const GEMINI_TIMEOUT_MS = 20000;
 
@@ -576,7 +576,7 @@ export async function fetchArticleHtml(url, fetchFn) {
   return { html, finalUrl };
 }
 
-export async function callGemini({ fetchFn, apiKey, model, prompt, noSchema }) {
+export async function callGemini({ fetchFn, apiKey, model, prompt, noSchema, timeoutMs }) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     model
   )}:generateContent`;
@@ -598,7 +598,7 @@ export async function callGemini({ fetchFn, apiKey, model, prompt, noSchema }) {
         }
       })
     },
-    GEMINI_TIMEOUT_MS
+    timeoutMs || GEMINI_TIMEOUT_MS
   );
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -625,6 +625,7 @@ export async function callGemini({ fetchFn, apiKey, model, prompt, noSchema }) {
 }
 
 export async function handleAutofill(event, deps) {
+  const startedAt = Date.now();
   const fetchFn = (deps && deps.fetch) || fetch;
   const env = (deps && deps.env) || process.env;
   const method = (event && event.httpMethod) || "GET";
@@ -691,21 +692,24 @@ export async function handleAutofill(event, deps) {
   try {
     const prompt = buildPrompt(extracted, url);
     let raw;
-    const busy = (e) => e && (e.status === 503 || e.status === 500 || e.status === 429);
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const busy = (e) => e && (e.status === 503 || e.status === 500 || e.status === 429 || e.name === "AbortError");
+    const deadline = startedAt + 24000;
     const tryModels = async () => {
-      const models = [model, "gemini-flash-latest", "gemini-flash-lite-latest"].filter((m, i, a) => a.indexOf(m) === i);
+      const models = [model, "gemini-flash-lite-latest", "gemini-flash-latest"].filter((m, i, a) => a.indexOf(m) === i);
       let last;
       for (let i = 0; i < models.length; i++) {
+        const left = deadline - Date.now();
+        if (left < 3000) break;
+        const isLast = i === models.length - 1;
+        const timeoutMs = isLast ? left : Math.min(left, i === 0 ? 11000 : 9000);
         try {
-          return await callGemini({ fetchFn, apiKey, model: models[i], prompt });
+          return await callGemini({ fetchFn, apiKey, model: models[i], prompt, timeoutMs });
         } catch (e) {
           last = e;
           if (!busy(e) && !(e && e.status === 404)) throw e;
-          await sleep(800);
         }
       }
-      throw last;
+      throw last || Object.assign(new Error("timeout"), { name: "AbortError" });
     };
     try {
       raw = await tryModels();

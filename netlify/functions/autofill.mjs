@@ -361,9 +361,15 @@ export function extractArticle(html, pageUrl) {
   title = title.replace(/\s+[|｜–—-]\s+.*$/, "").trim() || title;
   title = title.slice(0, 300);
 
-  const press =
+  let press =
     metaContent(raw, ["og:site_name", "application-name", "publisher"]) ||
     pressFromHost(pageUrl);
+  if (/네이버|naver|다음|daum/i.test(press) || /naver\.com|daum\.net/i.test(String(pageUrl || ""))) {
+    const real =
+      metaContent(raw, ["twitter:creator", "og:article:author", "article:author"]) || "";
+    const cleaned = real.replace(/\s*[|｜].*$/, "").trim();
+    if (cleaned && !/네이버|naver|다음|daum/i.test(cleaned)) press = cleaned;
+  }
 
   let date = normalizeDate(
     metaContent(raw, [
@@ -378,6 +384,10 @@ export function extractArticle(html, pageUrl) {
       "dc.date"
     ])
   );
+  if (!date) {
+    const nv = raw.match(/data-date-time\s*=\s*["'](\d{4}-\d{2}-\d{2})/i);
+    if (nv) date = nv[1];
+  }
   if (!date) {
     const time = attrOf(raw, /<time[^>]+datetime=["']([^"']+)["']/i);
     date = normalizeDate(time);
@@ -466,12 +476,14 @@ function buildPrompt(extracted, pageUrl) {
     "",
     "규칙:",
     "- 쉬운 한국어로 짧고 분명하게 쓰세요.",
+    "- 모든 칸의 문장은 존댓말 대신 개조식 명사형 어미(-함, -임, -됨, -음, -전망, -예정 등)로 끝내세요. 예: '코스피 4% 상승함', '외국인 순매수 영향임'. '-요', '-니다', '-다'로 끝내지 마세요.",
+    "- title은 '이미 파악된 정보'의 제목이 있으면 한 글자도 바꾸지 말고 그대로 쓰세요.",
     "- 아래 기사에 나온 사실만 사용하세요. 추측하거나, 기사에 없는 숫자를 만들지 마세요.",
     "- 기사에 없는 핵심 숫자나 사실은 해당 칸을 비워 두세요.",
     `- tags는 가능한 한 다음 목록에서 고르세요: ${PRESET_TAGS.join(", ")}. 꼭 필요할 때만 새 태그를 추가하세요.`,
     `- who는 다음 중에서만, 해당되는 것을 모두 고르세요: ${WHO_OPTIONS.join(", ")}.`,
     "- 투자 관점(investmentUp, investmentDown, investmentReason)은 일반적 가능성으로만 적으세요. 투자 조언이나 매수·매도 권유가 아닙니다.",
-    "- date는 YYYY-MM-DD 형식으로, 기사 날짜를 알 수 있을 때만 적으세요.",
+    "- date는 '이미 파악된 정보'의 날짜가 있으면 그대로 쓰고, 없으면 기사에 적힌 게시일만 YYYY-MM-DD로 적으세요. 기사 속 사건 날짜(예: '어제', '10일')로 추측하지 마세요.",
     "- terms에는 기사에 나온 경제 용어와 쉬운 뜻만 적으세요.",
     "- 내 생각이나 후속 결과는 적지 마세요.",
     "",
@@ -724,9 +736,9 @@ export async function handleAutofill(event, deps) {
       }
     }
     const result = normalizeAutofill(raw, extracted);
-    if (!result.title && extracted.title) result.title = extracted.title;
-    if (!result.press && extracted.press) result.press = extracted.press;
-    if (!result.date && extracted.date) result.date = extracted.date;
+    if (extracted.title) result.title = extracted.title;
+    if (extracted.press) result.press = extracted.press;
+    if (extracted.date) result.date = extracted.date;
     return json(200, result);
   } catch (err) {
     if (err instanceof SyntaxError) {

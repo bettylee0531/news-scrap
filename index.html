@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
   <meta name="description" content="경제 뉴스 기사 스크랩 — 경제공부와 흐름·동향 파악" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c5c4a'/%3E%3C/svg%3E" />
   <title>경제 뉴스 스크랩</title>
 <style>
 
@@ -78,7 +79,28 @@ header.app-header {
 }
 .brand h1 { margin: 0; font-size: 1.7rem; letter-spacing: -0.03em; }
 .brand p { margin: 4px 0 0; color: var(--ink-muted); font-size: 0.95rem; }
-.header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.auth-area { display: flex; align-items: center; }
+.user-chip { display: flex; align-items: center; gap: 8px; }
+.user-chip[hidden], #btn-login[hidden] { display: none !important; }
+.user-chip img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-soft);
+}
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 650;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .user-name { display: none; }
+}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -324,6 +346,7 @@ nav.tabs {
   color: var(--ink-muted);
   font-size: 0.9rem;
 }
+.notice p { margin: 0; }
 .notice strong { color: var(--ink); }
 .backup-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .stats-grid { display: grid; gap: 16px; }
@@ -523,6 +546,14 @@ textarea.short { min-height: 64px; }
         <p>경제공부와 흐름·동향을 한곳에 모아 두세요</p>
       </div>
       <div class="header-actions">
+        <div id="auth-area" class="auth-area">
+          <button type="button" class="btn" id="btn-login" data-testid="btn-login">Google로 로그인</button>
+          <div id="auth-user" class="user-chip" hidden>
+            <img id="auth-photo" alt="" width="32" height="32" referrerpolicy="no-referrer" />
+            <span id="auth-name" class="user-name"></span>
+            <button type="button" class="btn btn-sm" id="btn-logout" data-testid="btn-logout">로그아웃</button>
+          </div>
+        </div>
         <button type="button" class="btn btn-primary" id="btn-new" data-testid="btn-new">+ 새 스크랩</button>
       </div>
     </header>
@@ -579,9 +610,8 @@ textarea.short { min-height: 64px; }
       <div id="glossary" data-testid="glossary"></div>
     </section>
 
-    <aside class="notice" role="note">
-      <strong>저장 안내.</strong>
-      이 페이지의 스크랩은 이 브라우저의 저장 공간(로컬 스토리지)에만 남아요. 다른 기기나 다른 브라우저에는 보이지 않고, 사이트 데이터를 지우면 함께 사라져요. Netlify에 올린 뒤에도 데이터는 서버가 아니라 지금 쓰는 기기에만 저장돼요. 정기적으로 JSON 파일을 내보내 백업해 주세요. 새 기기에서 볼 때는 그 파일을 가져오면 기존 스크랩과 합쳐져요.
+    <aside class="notice" role="note" id="storage-notice">
+      <p id="notice-text"><strong>로그인하면 모든 기기에서 볼 수 있어요.</strong> 로그인하지 않으면 이 브라우저의 저장 공간(로컬 스토리지)에만 남아요. 다른 기기나 다른 브라우저에는 보이지 않고, 사이트 데이터를 지우면 함께 사라져요. Netlify에 올린 뒤에도 로그인하기 전에는 지금 쓰는 기기에만 저장돼요. 정기적으로 JSON 파일을 내보내 백업해 주세요. 새 기기에서 볼 때는 로그인하거나, JSON 파일을 가져오면 기존 스크랩과 합쳐져요.</p>
       <div class="backup-row">
         <button type="button" class="btn" id="btn-export" data-testid="btn-export">JSON 내보내기</button>
         <button type="button" class="btn" id="btn-import" data-testid="btn-import">JSON 가져오기 (합치기)</button>
@@ -703,7 +733,68 @@ textarea.short { min-height: 64px; }
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  writeBatch,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCtFtE8O_yelZJ7O0kUUOdhI3GXjwhKaso",
+  authDomain: "news-scrap-c27fe.firebaseapp.com",
+  projectId: "news-scrap-c27fe",
+  storageBucket: "news-scrap-c27fe.firebasestorage.app",
+  messagingSenderId: "445713843611",
+  appId: "1:445713843611:web:93aa1e3fc9a6c6cf9c8d3e",
+  measurementId: "G-4MF0Y4XCP8"
+};
+
+var fbApp = null;
+var fbAuth = null;
+var fbDb = null;
+var fbReady = false;
+
+try {
+  fbApp = initializeApp(FIREBASE_CONFIG);
+  fbAuth = getAuth(fbApp);
+  try {
+    fbDb = initializeFirestore(fbApp, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
+  } catch (err) {
+    try {
+      fbDb = initializeFirestore(fbApp, { localCache: memoryLocalCache() });
+    } catch (err2) {
+      fbDb = getFirestore(fbApp);
+    }
+  }
+  fbReady = true;
+} catch (err) {
+  console.warn("Firebase 초기화에 실패해 이 브라우저에만 저장해요.", err);
+}
+
 
 (function () {
   "use strict";
@@ -746,7 +837,10 @@ textarea.short { min-height: 64px; }
     filters: { q: "", tags: [], dateFrom: "", dateTo: "", needsFollowUp: false },
     expanded: {},
     editingId: null,
-    formTags: []
+    formTags: [],
+    currentUser: null,
+    authReady: false,
+    cloudUnsub: null
   };
 
   function $(id) { return document.getElementById(id); }
@@ -859,25 +953,39 @@ textarea.short { min-height: 64px; }
     };
   }
 
-  function load() {
+  function parseLocalEntries(raw) {
+    var data = JSON.parse(raw);
+    var list = Array.isArray(data) ? data : (data && data.entries) || [];
+    return list.map(normalizeEntry).filter(Boolean);
+  }
+
+  function readLocalEntries() {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return { existed: false, entries: [] };
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === null) {
-        state.entries = [normalizeEntry(SEED)];
-        save();
-        return;
-      }
-      var data = JSON.parse(raw);
-      var list = Array.isArray(data) ? data : (data && data.entries) || [];
-      state.entries = list.map(normalizeEntry).filter(Boolean);
+      return { existed: true, entries: parseLocalEntries(raw) };
     } catch (err) {
-      console.warn("저장 데이터를 읽지 못해 예시 스크랩으로 시작해요.", err);
-      state.entries = [normalizeEntry(SEED)];
-      save();
+      console.warn("저장 데이터를 읽지 못했어요.", err);
+      return { existed: true, entries: [] };
     }
   }
 
-  function save() {
+  function loadLocal(seedIfMissing) {
+    var local = readLocalEntries();
+    if (!local.existed) {
+      if (seedIfMissing) {
+        state.entries = [normalizeEntry(SEED)];
+        saveLocal();
+      } else {
+        state.entries = [];
+      }
+      return local;
+    }
+    state.entries = local.entries;
+    return local;
+  }
+
+  function saveLocal() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, entries: state.entries }));
       return true;
@@ -885,6 +993,335 @@ textarea.short { min-height: 64px; }
       toast("저장에 실패했어요. 브라우저 저장 공간이 부족한지 확인해 주세요.");
       return false;
     }
+  }
+
+  function save() {
+    if (state.currentUser) return true;
+    return saveLocal();
+  }
+
+  function friendlyError(err) {
+    var code = (err && err.code) || "";
+    var map = {
+      "auth/unauthorized-domain": "이 주소가 Firebase 승인된 도메인에 등록되지 않았어요.",
+      "auth/popup-blocked": "로그인 팝업이 차단되었어요.",
+      "auth/popup-closed-by-user": "로그인을 취소했어요.",
+      "auth/cancelled-popup-request": "로그인 창이 이미 열려 있어요.",
+      "auth/network-request-failed": "네트워크 연결을 확인해 주세요.",
+      "auth/internal-error": "로그인 중 오류가 났어요. 잠시 후 다시 시도해 주세요.",
+      "auth/operation-not-allowed": "Google 로그인이 Firebase에서 아직 켜져 있지 않아요.",
+      "auth/account-exists-with-different-credential": "같은 이메일로 이미 다른 로그인 방법이 연결되어 있어요.",
+      "permission-denied": "저장 권한이 없어요. 로그인 상태를 확인해 주세요.",
+      "firestore/permission-denied": "저장 권한이 없어요. 로그인 상태를 확인해 주세요.",
+      "unavailable": "네트워크를 확인해 주세요. 연결되면 자동으로 동기화돼요."
+    };
+    if (map[code]) return map[code];
+    if (/unauthorized-domain/.test(code)) return map["auth/unauthorized-domain"];
+    if (/permission-denied/.test(code)) return map["permission-denied"];
+    if (/network-request-failed/.test(code)) return map["auth/network-request-failed"];
+    return "문제가 생겼어요. 잠시 후 다시 시도해 주세요." + (code ? " (" + code + ")" : "");
+  }
+
+  function scrapsCol(uid) {
+    return collection(fbDb, "users", uid, "scraps");
+  }
+  function scrapRef(uid, id) {
+    return doc(fbDb, "users", uid, "scraps", id);
+  }
+  function settingsRef(uid) {
+    return doc(fbDb, "users", uid, "meta", "settings");
+  }
+
+  function toFirestoreData(entry) {
+    return JSON.parse(JSON.stringify({
+      id: entry.id,
+      date: entry.date || "",
+      title: entry.title,
+      source: entry.source || "",
+      url: entry.url || "",
+      tags: entry.tags || [],
+      keyNumbers: entry.keyNumbers || "",
+      what: entry.what || "",
+      why: entry.why || "",
+      who: entry.who || { categories: [], note: "" },
+      importance: entry.importance || "",
+      investFavorable: entry.investFavorable || "",
+      investUnfavorable: entry.investUnfavorable || "",
+      investReason: entry.investReason || "",
+      terms: entry.terms || [],
+      thought: entry.thought || "",
+      watch: entry.watch || "",
+      followUps: entry.followUps || [],
+      relatedIds: entry.relatedIds || [],
+      createdAt: entry.createdAt || "",
+      updatedAt: entry.updatedAt || "",
+      isSeed: !!entry.isSeed
+    }));
+  }
+
+  function entriesFromSnapshot(snap) {
+    return snap.docs.map(function (d) {
+      var data = d.data() || {};
+      return normalizeEntry(Object.assign({}, data, { id: d.id || data.id }));
+    }).filter(Boolean);
+  }
+
+  async function uploadEntries(uid, entries) {
+    var i = 0;
+    while (i < entries.length) {
+      var batch = writeBatch(fbDb);
+      entries.slice(i, i + 400).forEach(function (e) {
+        batch.set(scrapRef(uid, e.id), toFirestoreData(e), { merge: true });
+      });
+      await batch.commit();
+      i += 400;
+    }
+  }
+
+  async function markInitialized(uid) {
+    await setDoc(settingsRef(uid), {
+      initialized: true,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
+
+  async function persistEntry(entry) {
+    if (!state.currentUser) return saveLocal();
+    try {
+      await setDoc(scrapRef(state.currentUser.uid, entry.id), toFirestoreData(entry), { merge: true });
+      return true;
+    } catch (err) {
+      toast(friendlyError(err));
+      return false;
+    }
+  }
+
+  async function persistDelete(id, relatedUpdates) {
+    if (!state.currentUser) return saveLocal();
+    try {
+      await deleteDoc(scrapRef(state.currentUser.uid, id));
+      for (var i = 0; i < (relatedUpdates || []).length; i++) {
+        var e = relatedUpdates[i];
+        await setDoc(scrapRef(state.currentUser.uid, e.id), toFirestoreData(e), { merge: true });
+      }
+      return true;
+    } catch (err) {
+      toast(friendlyError(err));
+      return false;
+    }
+  }
+
+  function stopCloudSync() {
+    if (state.cloudUnsub) {
+      state.cloudUnsub();
+      state.cloudUnsub = null;
+    }
+  }
+
+  function maybeExpandSeed() {
+    if (state.entries.length === 1 && state.entries[0].isSeed) {
+      state.expanded[state.entries[0].id] = true;
+    }
+  }
+
+  async function maybeMigrateAndSeed(uid, cloudEntries) {
+    var local = readLocalEntries();
+    var cloudIds = {};
+    cloudEntries.forEach(function (e) { cloudIds[e.id] = true; });
+    var notInCloud = local.entries.filter(function (e) { return !cloudIds[e.id]; });
+    var wrote = false;
+
+    if (notInCloud.length) {
+      if (window.confirm("이 브라우저에 저장된 스크랩 " + notInCloud.length + "건을 계정으로 옮길까요?")) {
+        try {
+          await uploadEntries(uid, notInCloud);
+          wrote = true;
+        } catch (err) {
+          toast(friendlyError(err));
+        }
+      }
+    }
+
+    var initialized = false;
+    try {
+      var settings = await getDoc(settingsRef(uid));
+      initialized = !!(settings.exists() && settings.data() && settings.data().initialized);
+    } catch (err) {
+      toast(friendlyError(err));
+    }
+
+    if (!initialized && cloudEntries.length === 0 && !local.existed && !wrote) {
+      try {
+        var seed = normalizeEntry(SEED);
+        await setDoc(scrapRef(uid, seed.id), toFirestoreData(seed));
+        wrote = true;
+      } catch (err) {
+        toast(friendlyError(err));
+      }
+    }
+
+    try { await markInitialized(uid); } catch (err) { toast(friendlyError(err)); }
+
+    if (!wrote) {
+      state.entries = cloudEntries;
+      maybeExpandSeed();
+      renderAll();
+    }
+    return wrote;
+  }
+
+  function startCloudSync(uid) {
+    stopCloudSync();
+    var first = true;
+    state.cloudUnsub = onSnapshot(scrapsCol(uid), function (snap) {
+      var entries = entriesFromSnapshot(snap);
+      if (first) {
+        first = false;
+        maybeMigrateAndSeed(uid, entries).then(function (wrote) {
+          if (!wrote) {
+            state.entries = entries;
+            maybeExpandSeed();
+            renderAll();
+          }
+        });
+        return;
+      }
+      state.entries = entries;
+      renderAll();
+    }, function (err) {
+      toast(friendlyError(err));
+    });
+  }
+
+  function isMobileAuth() {
+    var ua = navigator.userAgent || "";
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  }
+
+  function googleProvider() {
+    var provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    return provider;
+  }
+
+  async function loginGoogle() {
+    if (!fbReady || !fbAuth) {
+      toast("로그인 기능을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    var provider = googleProvider();
+    try {
+      if (isMobileAuth()) {
+        await signInWithRedirect(fbAuth, provider);
+        return;
+      }
+      await signInWithPopup(fbAuth, provider);
+    } catch (err) {
+      if (err && (err.code === "auth/popup-blocked" || err.code === "auth/operation-not-supported-in-this-environment")) {
+        try {
+          toast("팝업이 차단되어 다른 방법으로 로그인할게요.");
+          await signInWithRedirect(fbAuth, provider);
+        } catch (err2) {
+          toast(friendlyError(err2));
+        }
+      } else if (err && (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request")) {
+        return;
+      } else {
+        toast(friendlyError(err));
+      }
+    }
+  }
+
+  async function logoutGoogle() {
+    try {
+      stopCloudSync();
+      if (fbAuth) await signOut(fbAuth);
+    } catch (err) {
+      toast(friendlyError(err));
+    }
+  }
+
+  function updateAuthUi() {
+    var user = state.currentUser;
+    var loginBtn = $("btn-login");
+    var box = $("auth-user");
+    if (!loginBtn || !box) return;
+    if (user) {
+      loginBtn.hidden = true;
+      box.hidden = false;
+      var name = user.displayName || user.email || "로그인됨";
+      $("auth-name").textContent = name;
+      var img = $("auth-photo");
+      if (user.photoURL) {
+        img.hidden = false;
+        img.src = user.photoURL;
+        img.alt = name;
+      } else {
+        img.hidden = true;
+        img.removeAttribute("src");
+      }
+    } else {
+      loginBtn.hidden = false;
+      box.hidden = true;
+    }
+  }
+
+  function updateNotice() {
+    var el = $("notice-text");
+    if (!el) return;
+    if (state.currentUser) {
+      el.innerHTML = "<strong>로그인되어 있어요.</strong> 스크랩은 계정에 저장되어 다른 기기에서도 볼 수 있어요. 정기적으로 JSON 파일을 내보내 백업해 두면 더 안심이에요.";
+    } else {
+      el.innerHTML = "<strong>로그인하면 모든 기기에서 볼 수 있어요.</strong> 로그인하지 않으면 이 브라우저의 저장 공간(로컬 스토리지)에만 남아요. 다른 기기나 다른 브라우저에는 보이지 않고, 사이트 데이터를 지우면 함께 사라져요. Netlify에 올린 뒤에도 로그인하기 전에는 지금 쓰는 기기에만 저장돼요. 정기적으로 JSON 파일을 내보내 백업해 주세요. 새 기기에서 볼 때는 로그인하거나, JSON 파일을 가져오면 기존 스크랩과 합쳐져요.";
+    }
+  }
+
+  function showAuthLoading() {
+    var box = $("list");
+    if (box) box.innerHTML = '<div class="empty"><h2>불러오는 중…</h2></div>';
+    $("list-count").textContent = "";
+  }
+
+  function enterSignedOut() {
+    stopCloudSync();
+    state.currentUser = null;
+    loadLocal(true);
+    maybeExpandSeed();
+    updateAuthUi();
+    updateNotice();
+    renderAll();
+  }
+
+  function enterSignedIn(user) {
+    state.currentUser = user;
+    updateAuthUi();
+    updateNotice();
+    if (!fbDb) {
+      toast("저장소를 불러오지 못했어요. 이 브라우저에만 잠시 저장해요.");
+      loadLocal(false);
+      renderAll();
+      return;
+    }
+    startCloudSync(user.uid);
+  }
+
+  async function startAuth() {
+    showAuthLoading();
+    if (!fbReady || !fbAuth) {
+      state.authReady = true;
+      enterSignedOut();
+      return;
+    }
+    try {
+      await getRedirectResult(fbAuth);
+    } catch (err) {
+      toast(friendlyError(err));
+    }
+    onAuthStateChanged(fbAuth, function (user) {
+      state.authReady = true;
+      if (user) enterSignedIn(user);
+      else enterSignedOut();
+    });
   }
 
   function byDateDesc(a, b) {
@@ -1385,29 +1822,38 @@ textarea.short { min-height: 64px; }
     var idx = state.entries.findIndex(function (e) { return e.id === entry.id; });
     if (idx >= 0) state.entries[idx] = entry;
     else state.entries.push(entry);
-    if (!save()) return;
-    state.expanded[entry.id] = true;
-    closeForm();
-    setView("list");
-    renderAll();
-    toast(idx >= 0 ? "스크랩을 수정했어요." : "스크랩을 저장했어요.");
-    setTimeout(function () {
-      var el = $("card-" + entry.id);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
+    Promise.resolve(state.currentUser ? persistEntry(entry) : save()).then(function (ok) {
+      if (!ok) return;
+      state.expanded[entry.id] = true;
+      closeForm();
+      setView("list");
+      renderAll();
+      toast(idx >= 0 ? "스크랩을 수정했어요." : "스크랩을 저장했어요.");
+      setTimeout(function () {
+        var el = $("card-" + entry.id);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    });
   }
 
   function deleteEntry(id) {
     var e = findEntry(id);
     if (!e) return;
     if (!window.confirm("‘" + e.title + "’ 스크랩을 삭제할까요? 이 작업은 되돌릴 수 없어요.")) return;
-    state.entries = state.entries.filter(function (x) { return x.id !== id; });
+    var relatedUpdates = [];
     state.entries.forEach(function (x) {
-      x.relatedIds = (x.relatedIds || []).filter(function (rid) { return rid !== id; });
+      var next = (x.relatedIds || []).filter(function (rid) { return rid !== id; });
+      if (next.length !== (x.relatedIds || []).length) {
+        x.relatedIds = next;
+        relatedUpdates.push(x);
+      }
     });
-    save();
-    renderAll();
-    toast("스크랩을 삭제했어요.");
+    state.entries = state.entries.filter(function (x) { return x.id !== id; });
+    Promise.resolve(state.currentUser ? persistDelete(id, relatedUpdates) : save()).then(function (ok) {
+      if (!ok) return;
+      renderAll();
+      toast("스크랩을 삭제했어요.");
+    });
   }
 
   function exportJson() {
@@ -1434,6 +1880,7 @@ textarea.short { min-height: 64px; }
     var list = Array.isArray(data) ? data : (data && data.entries);
     if (!Array.isArray(list)) { toast("스크랩 목록을 찾지 못했어요."); return; }
     var added = 0, updated = 0, skipped = 0;
+    var imported = [];
     list.forEach(function (raw) {
       var entry = normalizeEntry(raw);
       if (!entry) { skipped++; return; }
@@ -1446,12 +1893,22 @@ textarea.short { min-height: 64px; }
         state.entries.push(entry);
         added++;
       }
+      imported.push(entry);
     });
-    save();
-    renderAll();
-    var msg = "가져오기를 마쳤어요. 새로 추가 " + added + "건, 덮어씀 " + updated + "건";
-    if (skipped) msg += ", 건너뜀 " + skipped + "건";
-    toast(msg + ".");
+    var done = function () {
+      renderAll();
+      var msg = "가져오기를 마쳤어요. 새로 추가 " + added + "건, 덮어씀 " + updated + "건";
+      if (skipped) msg += ", 건너뜀 " + skipped + "건";
+      toast(msg + ".");
+    };
+    if (state.currentUser) {
+      uploadEntries(state.currentUser.uid, imported).then(done).catch(function (err) {
+        toast(friendlyError(err));
+      });
+    } else {
+      save();
+      done();
+    }
   }
 
   function bind() {
@@ -1460,6 +1917,9 @@ textarea.short { min-height: 64px; }
     $("tab-glossary").addEventListener("click", function () { setView("glossary"); });
 
     $("btn-new").addEventListener("click", function () { openForm(null); });
+    $("btn-login").addEventListener("click", function () { loginGoogle(); });
+    $("btn-logout").addEventListener("click", function () { logoutGoogle(); });
+    $("auth-photo").addEventListener("error", function () { this.hidden = true; });
     $("btn-form-close").addEventListener("click", closeForm);
     $("btn-form-cancel").addEventListener("click", closeForm);
     $("scrap-form").addEventListener("submit", onSubmit);
@@ -1566,15 +2026,13 @@ textarea.short { min-height: 64px; }
     });
   }
 
-  load();
   bind();
   renderFormTags();
   renderWho([]);
+  updateAuthUi();
+  updateNotice();
   setView("list");
-  if (state.entries.length === 1 && state.entries[0].isSeed) {
-    state.expanded[state.entries[0].id] = true;
-    renderList();
-  }
+  startAuth();
 })();
 
 </script>

@@ -447,10 +447,10 @@ const RESPONSE_SCHEMA = {
     press: { type: "string" },
     tags: { type: "array", items: { type: "string" } },
     keyNumbers: { type: "string", description: "기사에 나온 핵심 숫자만. 없으면 빈 문자열" },
-    what: { type: "string" },
-    why: { type: "string" },
+    what: { type: "string", description: "무슨 일이 벌어졌는지 자세히. 4~7문장, 기사 속 숫자·주체·시점 포함, 각 문장 -함/-임체" },
+    why: { type: "string", description: "왜 벌어졌는지 원인과 배경을 자세히. 원인별로 '- ' 글머리 3~6줄, 각 줄에 근거 포함" },
     who: { type: "array", items: { type: "string" } },
-    whoDetail: { type: "string" },
+    whoDetail: { type: "string", description: "who에서 고른 대상마다 한 줄씩 '대상: 어떤 영향을 어떻게 받는지'. 줄바꿈으로 구분" },
     whyImportant: { type: "string" },
     investmentUp: { type: "string" },
     investmentDown: { type: "string" },
@@ -460,9 +460,10 @@ const RESPONSE_SCHEMA = {
       items: {
         type: "object",
         properties: {
-          term: { type: "string" },
-          meaning: { type: "string" }
-        }
+          term: { type: "string", description: "용어 이름만. 짧은 단어나 구 (예: 고대역폭메모리(HBM)). 문장 금지" },
+          meaning: { type: "string", description: "초보자도 이해할 쉬운 뜻 1~2문장, -함/-임체" }
+        },
+        required: ["term", "meaning"]
       }
     },
     watch: { type: "string" }
@@ -484,7 +485,10 @@ function buildPrompt(extracted, pageUrl) {
     `- who는 다음 중에서만, 해당되는 것을 모두 고르세요: ${WHO_OPTIONS.join(", ")}.`,
     "- 투자 관점(investmentUp, investmentDown, investmentReason)은 일반적 가능성으로만 적으세요. 투자 조언이나 매수·매도 권유가 아닙니다.",
     "- date는 '이미 파악된 정보'의 날짜가 있으면 그대로 쓰고, 없으면 기사에 적힌 게시일만 YYYY-MM-DD로 적으세요. 기사 속 사건 날짜(예: '어제', '10일')로 추측하지 마세요.",
-    "- terms에는 기사에 나온 경제 용어와 쉬운 뜻만 적으세요.",
+    "- what(무슨 일이 벌어졌나)은 최대한 자세히 쓰세요. 4~7문장으로, 기사에 나온 숫자·주체(기업, 기관, 투자자)·시점을 빠짐없이 넣으세요.",
+    "- why(왜 벌어졌나)는 원인과 배경을 최대한 자세히 쓰세요. 원인마다 '- '로 시작하는 줄로 3~6줄 쓰고, 각 줄에 기사 속 근거를 함께 쓰세요.",
+    "- whoDetail은 who에서 고른 대상마다 한 줄씩 '대상: 어떤 영향을 어떻게 받는지' 형식으로 쓰세요. 예: '예금자/투자자: 반도체주 목표가 하향으로 단기 주가 부담이 커질 수 있음'. 줄바꿈으로 구분하세요.",
+    "- terms는 기사에 나온 경제 용어 2~5개를 고르세요. term에는 용어 이름만(짧은 단어), meaning에는 쉬운 뜻을 쓰세요. term에 문장을 넣지 마세요.",
     "- 내 생각이나 후속 결과는 적지 마세요.",
     "",
     "이미 파악된 정보:",
@@ -517,10 +521,18 @@ export function normalizeAutofill(raw, fallback) {
     terms = src.terms
       .map((t) => {
         if (!t) return null;
-        if (typeof t === "string") return { term: t.trim(), meaning: "" };
-        const term = String(t.term || "").trim();
-        const meaning = String(t.meaning || t.definition || "").trim();
-        return term ? { term, meaning } : null;
+        let term, meaning;
+        if (typeof t === "string") {
+          const m = t.match(/^\s*([^:：\-–—]{1,30})\s*[:：\-–—]\s*(.+)$/);
+          term = m ? m[1].trim() : t.trim();
+          meaning = m ? m[2].trim() : "";
+        } else {
+          term = String(t.term || t.name || "").trim();
+          meaning = String(t.meaning || t.definition || t.desc || "").trim();
+        }
+        if (!term) return null;
+        if (term.length > 30 || /(함|임|됨|음|다|요)\s*[.]?$/.test(term) && term.length > 15) return null;
+        return { term, meaning };
       })
       .filter(Boolean);
   }

@@ -708,8 +708,8 @@ textarea.short { min-height: 64px; }
         <legend>누가 영향을 받나 (Who)</legend>
         <div class="who-opts" id="f-who"></div>
         <div class="field">
-          <label for="f-who-note">한 줄 설명</label>
-          <input type="text" id="f-who-note" placeholder="누구에게, 어떤 영향인지 한 줄로" />
+          <label for="f-who-note">대상별 영향</label>
+          <textarea id="f-who-note" rows="4" placeholder="대상마다 한 줄씩: 누가 어떤 영향을 받는지"></textarea>
         </div>
       </fieldset>
 
@@ -1504,7 +1504,7 @@ try {
     var whoBits = [];
     if (e.who && e.who.categories && e.who.categories.length) whoBits.push(escapeHtml(e.who.categories.join(", ")));
     if (e.who && e.who.note) whoBits.push(escapeHtml(e.who.note));
-    if (whoBits.length) html += block("누가 영향을 받나", whoBits.join(" — "));
+    if (whoBits.length) html += block("누가 영향을 받나", whoBits.join("\n"));
     if (e.importance) html += block("왜 중요한가", escapeHtml(e.importance));
     if (e.investFavorable || e.investUnfavorable || e.investReason) {
       var inv = '<div class="invest-grid">';

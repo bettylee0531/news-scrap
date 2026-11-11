@@ -535,6 +535,36 @@ textarea.short { min-height: 64px; }
   * { animation: none !important; transition: none !important; }
 }
 
+.url-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+@media (max-width: 620px) {
+  .url-row { grid-template-columns: 1fr; }
+}
+.paste-details {
+  margin-top: 8px;
+}
+.paste-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.9rem;
+  list-style: none;
+}
+.paste-details summary::-webkit-details-marker { display: none; }
+.paste-details summary::before {
+  content: "▸ ";
+}
+.paste-details[open] summary::before { content: "▾ "; }
+.paste-area { min-height: 120px; }
+#btn-autofill[disabled], #btn-autofill[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 </style>
 </head>
 
@@ -627,6 +657,18 @@ textarea.short { min-height: 64px; }
     </div>
     <form id="scrap-form" data-testid="scrap-form" novalidate>
       <div class="form-grid">
+        <div class="field span-2 autofill-block">
+          <label for="f-url">원문 링크</label>
+          <div class="url-row">
+            <input type="url" id="f-url" name="url" placeholder="https://" inputmode="url" data-testid="f-url" />
+            <button type="button" class="btn" id="btn-autofill" data-testid="btn-autofill">자동 채우기</button>
+          </div>
+          <details class="paste-details" id="paste-details">
+            <summary>본문 직접 붙여넣기</summary>
+            <p class="hint" style="margin:8px 0">유료 기사거나 페이지를 가져오지 못할 때, 본문을 붙여넣고 자동 채우기를 눌러 주세요.</p>
+            <textarea id="f-paste" class="paste-area" data-testid="f-paste" placeholder="기사 본문을 붙여넣으세요"></textarea>
+          </details>
+        </div>
         <div class="field">
           <label for="f-date">날짜</label>
           <input type="date" id="f-date" name="date" />
@@ -638,10 +680,6 @@ textarea.short { min-height: 64px; }
         <div class="field span-2">
           <label for="f-title">기사 제목 <span class="req">*</span></label>
           <input type="text" id="f-title" name="title" required placeholder="기사 제목을 입력하세요" data-testid="f-title" />
-        </div>
-        <div class="field span-2">
-          <label for="f-url">원문 링크</label>
-          <input type="url" id="f-url" name="url" placeholder="https://" inputmode="url" />
         </div>
         <div class="field span-2">
           <label>분야 태그</label>
@@ -1714,6 +1752,9 @@ try {
     addTermRow("", "");
     $("f-followups").innerHTML = "";
     renderRelated(null, []);
+    if ($("f-paste")) $("f-paste").value = "";
+    if ($("paste-details")) $("paste-details").open = false;
+    setAutofillBusy(false);
     state.editingId = null;
     $("form-title").textContent = "새 스크랩";
   }
@@ -1758,6 +1799,95 @@ try {
     if (d.open && d.close) d.close();
     else d.removeAttribute("open");
     state.editingId = null;
+    setAutofillBusy(false);
+  }
+
+  function setAutofillBusy(busy) {
+    var btn = $("btn-autofill");
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.setAttribute("aria-busy", busy ? "true" : "false");
+    btn.textContent = busy ? "채우는 중…" : "자동 채우기";
+  }
+
+  function fillIfValue(id, value) {
+    if (value == null) return;
+    var s = String(value).trim();
+    if (!s) return;
+    var el = $(id);
+    if (el) el.value = s;
+  }
+
+  function applyAutofill(data) {
+    if (!data || typeof data !== "object") return;
+    var date = String(data.date || "").trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) $("f-date").value = date;
+    fillIfValue("f-title", data.title);
+    fillIfValue("f-source", data.press || data.source);
+    fillIfValue("f-key", data.keyNumbers);
+    fillIfValue("f-what", data.what);
+    fillIfValue("f-why", data.why);
+    fillIfValue("f-who-note", data.whoDetail || (data.who && data.who.note));
+    fillIfValue("f-importance", data.whyImportant || data.importance);
+    var up = data.investmentUp || data.investFavorable || (data.investment && data.investment.up);
+    var down = data.investmentDown || data.investUnfavorable || (data.investment && data.investment.down);
+    var reason = data.investmentReason || data.investReason || (data.investment && data.investment.reason);
+    fillIfValue("f-fav", up);
+    fillIfValue("f-unfav", down);
+    fillIfValue("f-reason", reason);
+    fillIfValue("f-watch", data.watch);
+    var who = [];
+    if (Array.isArray(data.who)) who = data.who;
+    else if (data.who && Array.isArray(data.who.categories)) who = data.who.categories;
+    if (who.length) renderWho(who);
+    if (Array.isArray(data.tags) && data.tags.length) {
+      state.formTags = data.tags.map(function (t) { return String(t).trim(); }).filter(Boolean);
+      renderFormTags();
+    }
+    var terms = Array.isArray(data.terms) ? data.terms : [];
+    if (terms.length) {
+      $("f-terms").innerHTML = "";
+      terms.forEach(function (t) {
+        var term = typeof t === "string" ? t : (t && (t.term || ""));
+        var meaning = typeof t === "string" ? "" : (t && (t.meaning || t.definition || ""));
+        if (term) addTermRow(term, meaning);
+      });
+      if (!$("f-terms").children.length) addTermRow("", "");
+    }
+  }
+
+  async function autofillFromLink() {
+    var url = trim($("f-url") && $("f-url").value);
+    var text = trim($("f-paste") && $("f-paste").value);
+    if (!url && !text) {
+      toast("기사 링크를 넣거나, 본문을 붙여넣어 주세요.");
+      return;
+    }
+    if (url && !safeUrl(url)) {
+      toast("올바른 링크(http 또는 https)를 넣어 주세요.");
+      $("f-url").focus();
+      return;
+    }
+    setAutofillBusy(true);
+    try {
+      var res = await fetch("/.netlify/functions/autofill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url || undefined, text: text || undefined })
+      });
+      var data = {};
+      try { data = await res.json(); } catch (e) { data = {}; }
+      if (!res.ok) {
+        toast((data && data.error) || "자동 채우기에 실패했어요.");
+        return;
+      }
+      applyAutofill(data);
+      toast("내용을 채웠어요. 확인한 뒤 저장해 주세요.");
+    } catch (err) {
+      toast("자동 채우기에 실패했어요. 네트워크를 확인해 주세요.");
+    } finally {
+      setAutofillBusy(false);
+    }
   }
 
   function collectForm() {
@@ -1917,6 +2047,7 @@ try {
     $("tab-glossary").addEventListener("click", function () { setView("glossary"); });
 
     $("btn-new").addEventListener("click", function () { openForm(null); });
+    $("btn-autofill").addEventListener("click", function () { autofillFromLink(); });
     $("btn-login").addEventListener("click", function () { loginGoogle(); });
     $("btn-logout").addEventListener("click", function () { logoutGoogle(); });
     $("auth-photo").addEventListener("error", function () { this.hidden = true; });

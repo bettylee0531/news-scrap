@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="경제 뉴스 기사 스크랩 — 경제공부와 흐름·동향 파악" />
+  <title>경제 뉴스 스크랩</title>
+<style>
+
+:root {
+  --bg: #f3f0e8;
+  --bg-elev: #fffcf6;
+  --bg-soft: #ebe6db;
+  --ink: #1b1915;
+  --ink-muted: #5e594f;
+  --line: #ddd6c8;
+  --accent: #0c5c4a;
+  --accent-hover: #09483a;
+  --accent-soft: #e4f3ee;
+  --accent-ink: #0c5c4a;
+  --danger: #b42318;
+  --danger-soft: #fde8e6;
+  --warn: #9a4b0a;
+  --warn-soft: #fdecd4;
+  --chip: #f4efe4;
+  --chip-on: #0c5c4a;
+  --chip-on-bg: #d7efe7;
+  --shadow: 0 1px 2px rgba(27, 25, 21, 0.05), 0 10px 28px rgba(27, 25, 21, 0.07);
+  --radius: 16px;
+  --font: "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12110f;
+    --bg-elev: #1c1b18;
+    --bg-soft: #26241f;
+    --ink: #f4f0e7;
+    --ink-muted: #b3ada1;
+    --line: #3a372f;
+    --accent: #6ec9ad;
+    --accent-hover: #8fd8c0;
+    --accent-soft: #1b2f29;
+    --accent-ink: #8fd8c0;
+    --danger: #f97066;
+    --danger-soft: #3a1d1b;
+    --warn: #f0b155;
+    --warn-soft: #3a2c16;
+    --chip: #2a2823;
+    --chip-on: #8fd8c0;
+    --chip-on-bg: #1f3a32;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.28);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.65;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent-ink); }
+a:hover { text-decoration-thickness: 2px; }
+h1, h2, h3, h4 { line-height: 1.35; word-break: keep-all; }
+.app { max-width: 920px; margin: 0 auto; padding: 28px 20px 80px; }
+header.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: 22px;
+}
+.brand h1 { margin: 0; font-size: 1.7rem; letter-spacing: -0.03em; }
+.brand p { margin: 4px 0 0; color: var(--ink-muted); font-size: 0.95rem; }
+.header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 42px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.btn:hover { background: var(--bg-soft); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible, .chip:focus-visible, .tab:focus-visible, .icon-btn:focus-visible, .card-toggle:focus-visible, .bar-label:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 650;
+}
+@media (prefers-color-scheme: dark) {
+  .btn-primary { color: #0b1f19; }
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger-soft); border-color: transparent; color: var(--danger); }
+.btn-ghost { background: transparent; }
+.btn-sm { min-height: 36px; padding: 4px 12px; font-size: 0.9rem; }
+.icon-btn {
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 0;
+}
+.icon-btn:hover { background: var(--bg-soft); color: var(--ink); }
+nav.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-soft);
+  border-radius: 14px;
+  margin-bottom: 18px;
+  width: fit-content;
+  max-width: 100%;
+}
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  border-radius: 11px;
+  padding: 8px 16px;
+  min-height: 40px;
+  font-weight: 600;
+}
+.tab[aria-selected="true"] {
+  background: var(--bg-elev);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.filters { display: grid; gap: 12px; margin-bottom: 16px; }
+.filters-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search { flex: 1 1 220px; position: relative; }
+.search input, .field input, .field textarea, .field select, .date-input,
+#f-tag-custom, .term-name, .term-def, .fu-date, .fu-text, .fu-url {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-height: 42px;
+}
+.search input { padding-left: 38px; }
+.search .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+.date-range { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.date-range input { width: 150px; min-height: 42px; }
+.date-range span, .date-range label { color: var(--ink-muted); font-size: 0.85rem; font-weight: 650; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 5px 11px;
+  min-height: 34px;
+  font-size: 0.86rem;
+}
+.chip[aria-pressed="true"], .chip.active {
+  background: var(--chip-on-bg);
+  border-color: transparent;
+  color: var(--chip-on);
+  font-weight: 650;
+}
+.chip .x { margin-left: 4px; opacity: 0.7; }
+.toggle-pill { border: 1px dashed var(--line); background: transparent; color: var(--ink-muted); }
+.toggle-pill[aria-pressed="true"] {
+  background: var(--warn-soft);
+  border-style: solid;
+  border-color: transparent;
+  color: var(--warn);
+  font-weight: 650;
+}
+.list-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin: 4px 0 12px;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.card.flash { animation: flash 1.4s ease; }
+@keyframes flash {
+  0%, 100% { box-shadow: var(--shadow); }
+  25% { box-shadow: 0 0 0 3px var(--accent); }
+}
+.card-toggle {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 16px 18px 14px;
+  display: block;
+}
+.card-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.card-date { font-variant-numeric: tabular-nums; font-size: 0.85rem; color: var(--ink-muted); font-weight: 600; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.card-title { margin: 0; font-size: 1.08rem; letter-spacing: -0.02em; }
+.card-sub { margin-top: 0; padding: 0 18px 12px; color: var(--ink-muted); font-size: 0.9rem; }
+.card-toggle .card-tags { margin-bottom: 0; }
+.card-tags { margin-top: 8px; }
+.tag {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  margin: 0 4px 4px 0;
+}
+.chev { margin-left: auto; color: var(--ink-muted); transition: transform 0.15s; font-size: 0.85rem; }
+.card.open .chev { transform: rotate(180deg); }
+.card-body { display: none; padding: 0 18px 18px; border-top: 1px solid var(--line); }
+.card.open .card-body { display: block; padding-top: 14px; }
+.field-block {
+  margin: 0 0 12px;
+  padding: 12px 14px 12px 14px;
+  background: var(--accent-soft);
+  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+}
+.field-block dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+.field-block .label-icon {
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 400;
+  flex: 0 0 auto;
+}
+.field-block dd {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.65;
+}
+.field-block .follow-item { background: var(--bg-elev); }
+.invest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
+.invest-grid .field-block { margin-bottom: 0; }
+@media (max-width: 620px) { .invest-grid { grid-template-columns: 1fr; } }
+.term-item { margin: 0 0 6px; }
+.term-item strong { font-weight: 700; }
+.follow-item {
+  padding: 10px 12px;
+  background: var(--bg-soft);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.follow-item .when { font-size: 0.82rem; font-weight: 700; color: var(--ink-muted); }
+.card-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 4px; }
+.empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--ink-muted);
+  background: var(--bg-elev);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.empty h2 { margin: 0 0 8px; color: var(--ink); font-size: 1.15rem; }
+.notice {
+  margin-top: 28px;
+  padding: 14px 16px;
+  background: var(--bg-soft);
+  border-radius: 14px;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.notice strong { color: var(--ink); }
+.backup-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.stats-grid { display: grid; gap: 16px; }
+.panel {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+.panel h2 { margin: 0 0 14px; font-size: 1.05rem; }
+.stat-total { font-size: 0.95rem; color: var(--ink-muted); margin-bottom: 12px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 110px) 1fr 2rem;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.bar-label {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+.bar-track { height: 10px; background: var(--bg-soft); border-radius: 99px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 99px; min-width: 0; }
+.bar-n { font-size: 0.85rem; font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-muted); }
+.week-chart { width: 100%; overflow-x: auto; }
+.week-chart svg { width: 100%; min-width: 420px; height: 200px; display: block; }
+.week-chart text { fill: var(--ink-muted); font-size: 10px; font-family: var(--font); }
+.week-chart .axis { stroke: var(--line); }
+.week-chart .col { fill: var(--accent); }
+.week-chart .col.empty { fill: var(--bg-soft); }
+.glossary-list { display: grid; gap: 10px; }
+.glossary-item {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.glossary-item h3 { margin: 0 0 4px; font-size: 1.02rem; }
+.glossary-item p { margin: 0 0 8px; color: var(--ink-muted); }
+.glossary-item .src-link { display: inline-block; margin: 0 10px 4px 0; font-size: 0.88rem; }
+dialog.form-dialog {
+  width: min(740px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--bg-elev);
+  color: var(--ink);
+  padding: 0;
+  box-shadow: var(--shadow);
+}
+dialog.form-dialog::backdrop { background: rgba(20, 18, 14, 0.45); }
+@media (max-width: 640px) {
+  dialog.form-dialog {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+  }
+}
+.form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 18px 10px;
+  position: sticky;
+  top: 0;
+  background: var(--bg-elev);
+  z-index: 1;
+  border-bottom: 1px solid var(--line);
+}
+.form-head h2 { margin: 0; font-size: 1.15rem; }
+form#scrap-form { padding: 8px 18px 18px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.span-2 { grid-column: 1 / -1; }
+@media (max-width: 620px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .span-2 { grid-column: auto; }
+}
+.field label, fieldset legend {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+fieldset {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 12px 12px 12px 14px;
+  margin: 12px 0 0;
+  background: var(--accent-soft);
+}
+fieldset legend { padding: 0 8px; color: var(--accent); background: var(--bg-elev); }
+.req { color: var(--danger); }
+textarea {
+  min-height: 84px;
+  resize: vertical;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+textarea.short { min-height: 64px; }
+.hint { font-size: 0.8rem; color: var(--ink-muted); font-weight: 400; margin-left: 4px; }
+.who-opts { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 8px; }
+.who-opts label, .related-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.dyn-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1.4fr auto;
+  align-items: start;
+  margin-bottom: 8px;
+}
+.follow-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 140px 1fr 1fr auto;
+  margin-bottom: 8px;
+}
+@media (max-width: 680px) {
+  .dyn-row, .follow-row { grid-template-columns: 1fr; }
+}
+.related-list { display: grid; gap: 6px; max-height: 200px; overflow: auto; padding: 4px; }
+.form-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-elev);
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 80;
+  max-width: min(90vw, 420px);
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+</style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="brand">
+        <h1>경제 뉴스 스크랩</h1>
+        <p>경제공부와 흐름·동향을 한곳에 모아 두세요</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary" id="btn-new" data-testid="btn-new">+ 새 스크랩</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="보기 전환">
+      <button type="button" class="tab" role="tab" id="tab-list" aria-selected="true" aria-controls="view-list">목록</button>
+      <button type="button" class="tab" role="tab" id="tab-stats" aria-selected="false" aria-controls="view-stats">통계</button>
+      <button type="button" class="tab" role="tab" id="tab-glossary" aria-selected="false" aria-controls="view-glossary">용어 사전</button>
+    </nav>
+
+    <section id="view-list" role="tabpanel" aria-labelledby="tab-list">
+      <div class="filters">
+        <div class="filters-row">
+          <div class="search">
+            <span class="search-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            </span>
+            <input type="search" id="filter-q" placeholder="제목, 내용, 용어 검색" autocomplete="off" data-testid="filter-q" />
+          </div>
+          <div class="date-range">
+            <label for="filter-from">시작일</label>
+            <input type="date" id="filter-from" class="date-input" data-testid="filter-from" />
+            <span>~</span>
+            <label for="filter-to">종료일</label>
+            <input type="date" id="filter-to" class="date-input" data-testid="filter-to" />
+          </div>
+          <button type="button" class="btn btn-sm toggle-pill" id="filter-followup" aria-pressed="false" data-testid="filter-followup">Follow-up 필요만</button>
+        </div>
+        <div class="chip-row" id="filter-tags" data-testid="filter-tags"></div>
+      </div>
+      <div class="list-meta">
+        <div id="list-count"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-clear-filters">필터 지우기</button>
+      </div>
+      <div id="list" data-testid="list"></div>
+    </section>
+
+    <section id="view-stats" role="tabpanel" aria-labelledby="tab-stats" hidden>
+      <div class="stats-grid">
+        <div class="panel">
+          <h2>분야별 스크랩 수</h2>
+          <div class="stat-total" id="stat-total"></div>
+          <div id="tag-bars" data-testid="tag-bars"></div>
+        </div>
+        <div class="panel">
+          <h2>주간 스크랩 수</h2>
+          <p class="stat-total">최근 12주, 월요일 시작 기준</p>
+          <div class="week-chart" id="week-chart" data-testid="week-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-glossary" role="tabpanel" aria-labelledby="tab-glossary" hidden>
+      <div id="glossary" data-testid="glossary"></div>
+    </section>
+
+    <aside class="notice" role="note">
+      <strong>저장 안내.</strong>
+      이 페이지의 스크랩은 이 브라우저의 저장 공간(로컬 스토리지)에만 남아요. 다른 기기나 다른 브라우저에는 보이지 않고, 사이트 데이터를 지우면 함께 사라져요. Netlify에 올린 뒤에도 데이터는 서버가 아니라 지금 쓰는 기기에만 저장돼요. 정기적으로 JSON 파일을 내보내 백업해 주세요. 새 기기에서 볼 때는 그 파일을 가져오면 기존 스크랩과 합쳐져요.
+      <div class="backup-row">
+        <button type="button" class="btn" id="btn-export" data-testid="btn-export">JSON 내보내기</button>
+        <button type="button" class="btn" id="btn-import" data-testid="btn-import">JSON 가져오기 (합치기)</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden />
+      </div>
+    </aside>
+  </div>
+
+  <dialog class="form-dialog" id="form-dialog" aria-labelledby="form-title">
+    <div class="form-head">
+      <h2 id="form-title">새 스크랩</h2>
+      <button type="button" class="icon-btn" id="btn-form-close" aria-label="닫기">✕</button>
+    </div>
+    <form id="scrap-form" data-testid="scrap-form" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-date">날짜</label>
+          <input type="date" id="f-date" name="date" />
+        </div>
+        <div class="field">
+          <label for="f-source">언론사</label>
+          <input type="text" id="f-source" name="source" placeholder="예: 연합뉴스" />
+        </div>
+        <div class="field span-2">
+          <label for="f-title">기사 제목 <span class="req">*</span></label>
+          <input type="text" id="f-title" name="title" required placeholder="기사 제목을 입력하세요" data-testid="f-title" />
+        </div>
+        <div class="field span-2">
+          <label for="f-url">원문 링크</label>
+          <input type="url" id="f-url" name="url" placeholder="https://" inputmode="url" />
+        </div>
+        <div class="field span-2">
+          <label>분야 태그</label>
+          <div class="chip-row" id="f-tags"></div>
+          <div class="filters-row" style="margin-top:8px">
+            <input type="text" id="f-tag-custom" placeholder="태그 직접 입력 후 Enter" style="flex:1;min-width:160px" />
+            <button type="button" class="btn btn-sm" id="btn-add-tag">태그 추가</button>
+          </div>
+        </div>
+        <div class="field span-2">
+          <label for="f-key">핵심 숫자</label>
+          <textarea class="short" id="f-key" name="keyNumbers" placeholder="예: 코스피 5,239.13 (+4.39%)"></textarea>
+        </div>
+        <div class="field span-2">
+          <label for="f-what">무슨 일이 벌어졌나 (What)</label>
+          <textarea id="f-what" name="what" placeholder="기사에서 일어난 일을 짧게 정리해 보세요"></textarea>
+        </div>
+        <div class="field span-2">
+          <label for="f-why">왜 벌어졌나 (Why)</label>
+          <textarea id="f-why" name="why" placeholder="원인이나 배경을 적어 보세요"></textarea>
+        </div>
+      </div>
+
+      <fieldset>
+        <legend>누가 영향을 받나 (Who)</legend>
+        <div class="who-opts" id="f-who"></div>
+        <div class="field">
+          <label for="f-who-note">한 줄 설명</label>
+          <input type="text" id="f-who-note" placeholder="누구에게, 어떤 영향인지 한 줄로" />
+        </div>
+      </fieldset>
+
+      <div class="field" style="margin-top:12px">
+        <label for="f-importance">왜 중요한가</label>
+        <textarea id="f-importance" placeholder="나와 시장 전체에 주는 의미를 적어 보세요"></textarea>
+      </div>
+
+      <fieldset>
+        <legend>투자 관점</legend>
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-fav">유리해질 수 있는 자산</label>
+            <textarea class="short" id="f-fav" placeholder="예: 반도체주, 항공주"></textarea>
+          </div>
+          <div class="field">
+            <label for="f-unfav">불리해질 수 있는 자산</label>
+            <textarea class="short" id="f-unfav" placeholder="예: 달러 자산"></textarea>
+          </div>
+          <div class="field span-2">
+            <label for="f-reason">그 이유</label>
+            <textarea id="f-reason" placeholder="왜 그렇게 보는지 적어 보세요"></textarea>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>새로 배운 경제 용어 <span class="hint">용어 사전에 모입니다</span></legend>
+        <div id="f-terms"></div>
+        <button type="button" class="btn btn-sm" id="btn-add-term">+ 용어 추가</button>
+      </fieldset>
+
+      <div class="field" style="margin-top:12px">
+        <label for="f-thought">내 생각·예측</label>
+        <textarea id="f-thought" placeholder="앞으로 어떻게 될지, 내 생각을 한 줄이라도 남겨 보세요. 나중에 Follow-up에서 맞춰 볼 수 있어요."></textarea>
+      </div>
+      <div class="field">
+        <label for="f-watch">지켜볼 것</label>
+        <textarea class="short" id="f-watch" placeholder="이후 확인할 지표, 실적, 후속 뉴스"></textarea>
+      </div>
+
+      <fieldset>
+        <legend>Follow-up <span class="hint">그 이후 어떻게 되었는지, 실제 결과나 후속 기사</span></legend>
+        <div id="f-followups"></div>
+        <button type="button" class="btn btn-sm" id="btn-add-follow">+ 후속 메모 추가</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>관련 스크랩 연결</legend>
+        <div class="related-list" id="f-related"></div>
+        <p class="hint" id="f-related-empty" hidden>아직 연결할 다른 스크랩이 없어요.</p>
+      </fieldset>
+
+      <div class="form-foot">
+        <button type="button" class="btn btn-ghost" id="btn-form-cancel">취소</button>
+        <button type="submit" class="btn btn-primary" data-testid="btn-save">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "econ-news-scraps-v1";
+  var PRESET_TAGS = ["금리", "환율", "유가", "주식시장", "반도체", "부동산", "미국", "물가", "기업실적", "정책"];
+  var WHO_OPTIONS = ["대출자/차주", "예금자/투자자", "기업/산업", "기타"];
+
+  var SEED = {
+    id: "seed-2026-11-10-kospi",
+    date: "2026-11-10",
+    title: "코스피·코스닥, 4%대 급등 마감…급락 딛고 4거래일 만에 반등",
+    source: "연합뉴스",
+    url: "https://www.yna.co.kr/view/AKR20261110131951008",
+    tags: ["주식시장", "반도체", "유가", "환율", "미국"],
+    keyNumbers: "코스피 5,239.13 (+4.39%), SK하이닉스 1,212,000원 (+6.69%), 외국인 3,587억 원 순매수, 달러/원 1,337.5원 (-9.6원)",
+    what: "미국 중간선거 이후 3거래일 연속 급락했던 코스피가 하루 만에 4% 넘게 올랐고 장 초반 매수 사이드카가 발동됐다.",
+    why: "간밤 미국 반도체주 급등(필라델피아 반도체지수 +6.86%), 트럼프 발언 후 유가 4~5% 급락, 낙폭 과대 인식에 따른 저가 매수.",
+    who: { categories: ["예금자/투자자", "기업/산업"], note: "반도체 투자자와 항공사 등 연료비 부담이 큰 기업이 수혜." },
+    importance: "AI 규제 우려로 흔들리던 반도체 중심 시장 분위기가 진정됐는지 보여주는 신호지만 외국인 매수 규모가 작아 추세 전환으로 보긴 이르다는 분석.",
+    investFavorable: "반도체주, 항공주",
+    investUnfavorable: "달러 자산(원화 강세 시 원화 환산 가치 감소)",
+    investReason: "유가 하락은 연료비·물가 부담을 줄이고, 미국 반도체 강세는 한국 공급망 기업으로 이어짐; 외국인 주식 매수는 원화 수요를 늘려 환율 하락.",
+    terms: [
+      { term: "매수 사이드카", definition: "선물 급등 시 프로그램 매수 5분 정지" },
+      { term: "저가 매수", definition: "" }
+    ],
+    thought: "",
+    watch: "미국 10월 CPI, 코어위브 3분기 실적, 외국인 순매수 지속 여부",
+    followUps: [],
+    relatedIds: [],
+    createdAt: "2026-11-10T16:00:00+09:00",
+    updatedAt: "2026-11-10T16:00:00+09:00",
+    isSeed: true
+  };
+
+  var state = {
+    entries: [],
+    view: "list",
+    filters: { q: "", tags: [], dateFrom: "", dateTo: "", needsFollowUp: false },
+    expanded: {},
+    editingId: null,
+    formTags: []
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function uid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function todayISO() {
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function safeUrl(u) {
+    if (!u) return "";
+    var t = String(u).trim();
+    if (!t) return "";
+    if (!/^https?:\/\//i.test(t)) t = "https://" + t;
+    try {
+      var url = new URL(t);
+      if (url.protocol === "http:" || url.protocol === "https:") return url.href;
+    } catch (e) {}
+    return "";
+  }
+
+  function trim(s) { return String(s == null ? "" : s).trim(); }
+
+  function needsFollowUp(e) {
+    return !!(trim(e.watch) && (!e.followUps || !e.followUps.length || e.followUps.every(function (f) {
+      return !trim(f.text) && !trim(f.url);
+    })));
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "";
+    var p = String(iso).split("-");
+    if (p.length !== 3) return iso;
+    return p[0] + "년 " + Number(p[1]) + "월 " + Number(p[2]) + "일";
+  }
+
+  function parseTermString(s) {
+    var t = trim(s);
+    var m = t.match(/^(.+?)\s*[（(](.+?)[）)]\s*$/);
+    if (m) return { term: trim(m[1]), definition: trim(m[2]) };
+    return { term: t, definition: "" };
+  }
+
+  function normalizeEntry(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    var title = trim(raw.title);
+    if (!title) return null;
+    var terms = [];
+    if (Array.isArray(raw.terms)) {
+      raw.terms.forEach(function (t) {
+        if (typeof t === "string") {
+          var parsed = parseTermString(t);
+          if (parsed.term) terms.push(parsed);
+        } else if (t && trim(t.term)) {
+          terms.push({ term: trim(t.term), definition: trim(t.definition) });
+        }
+      });
+    } else if (typeof raw.terms === "string" && trim(raw.terms)) {
+      String(raw.terms).split(/\s*,\s*/).forEach(function (part) {
+        var parsed = parseTermString(part);
+        if (parsed.term) terms.push(parsed);
+      });
+    }
+    var who = raw.who && typeof raw.who === "object" ? raw.who : {};
+    var cats = Array.isArray(who.categories) ? who.categories.filter(function (c) {
+      return WHO_OPTIONS.indexOf(c) !== -1;
+    }) : [];
+    var followUps = Array.isArray(raw.followUps) ? raw.followUps.map(function (f) {
+      return { date: trim(f && f.date), text: trim(f && f.text), url: trim(f && f.url) };
+    }).filter(function (f) { return f.date || f.text || f.url; }) : [];
+    var tags = Array.isArray(raw.tags) ? raw.tags.map(trim).filter(Boolean) : [];
+    tags = tags.filter(function (t, i) { return tags.indexOf(t) === i; });
+    return {
+      id: trim(raw.id) || uid(),
+      date: trim(raw.date),
+      title: title,
+      source: trim(raw.source),
+      url: trim(raw.url),
+      tags: tags,
+      keyNumbers: trim(raw.keyNumbers),
+      what: trim(raw.what),
+      why: trim(raw.why),
+      who: { categories: cats, note: trim(who.note) },
+      importance: trim(raw.importance),
+      investFavorable: trim(raw.investFavorable),
+      investUnfavorable: trim(raw.investUnfavorable),
+      investReason: trim(raw.investReason),
+      terms: terms,
+      thought: trim(raw.thought),
+      watch: trim(raw.watch),
+      followUps: followUps,
+      relatedIds: Array.isArray(raw.relatedIds) ? raw.relatedIds.map(String) : [],
+      createdAt: raw.createdAt || new Date().toISOString(),
+      updatedAt: raw.updatedAt || new Date().toISOString(),
+      isSeed: !!raw.isSeed
+    };
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === null) {
+        state.entries = [normalizeEntry(SEED)];
+        save();
+        return;
+      }
+      var data = JSON.parse(raw);
+      var list = Array.isArray(data) ? data : (data && data.entries) || [];
+      state.entries = list.map(normalizeEntry).filter(Boolean);
+    } catch (err) {
+      console.warn("저장 데이터를 읽지 못해 예시 스크랩으로 시작해요.", err);
+      state.entries = [normalizeEntry(SEED)];
+      save();
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, entries: state.entries }));
+      return true;
+    } catch (err) {
+      toast("저장에 실패했어요. 브라우저 저장 공간이 부족한지 확인해 주세요.");
+      return false;
+    }
+  }
+
+  function byDateDesc(a, b) {
+    var da = a.date || "";
+    var db = b.date || "";
+    if (da !== db) return da < db ? 1 : -1;
+    return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+  }
+
+  function allTags() {
+    var set = {};
+    PRESET_TAGS.forEach(function (t) { set[t] = true; });
+    state.entries.forEach(function (e) {
+      (e.tags || []).forEach(function (t) { set[t] = true; });
+    });
+    var custom = Object.keys(set).filter(function (t) {
+      return PRESET_TAGS.indexOf(t) === -1;
+    }).sort(function (a, b) { return a.localeCompare(b, "ko"); });
+    return PRESET_TAGS.concat(custom);
+  }
+
+  function usedTags() {
+    var set = {};
+    state.entries.forEach(function (e) {
+      (e.tags || []).forEach(function (t) { set[t] = (set[t] || 0) + 1; });
+    });
+    return set;
+  }
+
+  function entrySearchText(e) {
+    var parts = [
+      e.date, e.title, e.source, e.url, (e.tags || []).join(" "),
+      e.keyNumbers, e.what, e.why, (e.who && e.who.note) || "",
+      (e.who && e.who.categories || []).join(" "),
+      e.importance, e.investFavorable, e.investUnfavorable, e.investReason,
+      e.thought, e.watch
+    ];
+    (e.terms || []).forEach(function (t) { parts.push(t.term, t.definition); });
+    (e.followUps || []).forEach(function (f) { parts.push(f.date, f.text, f.url); });
+    return parts.join("\n").toLowerCase();
+  }
+
+  function filteredEntries() {
+    var f = state.filters;
+    var q = trim(f.q).toLowerCase();
+    return state.entries.filter(function (e) {
+      if (q && entrySearchText(e).indexOf(q) === -1) return false;
+      if (f.dateFrom && (!e.date || e.date < f.dateFrom)) return false;
+      if (f.dateTo && (!e.date || e.date > f.dateTo)) return false;
+      if (f.tags.length && !f.tags.some(function (t) { return (e.tags || []).indexOf(t) !== -1; })) return false;
+      if (f.needsFollowUp && !needsFollowUp(e)) return false;
+      return true;
+    }).slice().sort(byDateDesc);
+  }
+
+  function toast(msg) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove("show"); }, 2800);
+  }
+
+  function findEntry(id) {
+    for (var i = 0; i < state.entries.length; i++) if (state.entries[i].id === id) return state.entries[i];
+    return null;
+  }
+
+  function renderFilterTags() {
+    var used = usedTags();
+    var tags = allTags().filter(function (t) { return used[t] || state.filters.tags.indexOf(t) !== -1; });
+    if (!tags.length) {
+      $("filter-tags").innerHTML = "";
+      return;
+    }
+    $("filter-tags").innerHTML = tags.map(function (t) {
+      var on = state.filters.tags.indexOf(t) !== -1;
+      var n = used[t] || 0;
+      return '<button type="button" class="chip' + (on ? " active" : "") + '" data-filter-tag="' + escapeHtml(t) + '" aria-pressed="' + on + '">' +
+        escapeHtml(t) + (n ? " " + n : "") + "</button>";
+    }).join("");
+  }
+
+  function renderList() {
+    renderFilterTags();
+    var items = filteredEntries();
+    var total = state.entries.length;
+    $("list-count").textContent = items.length === total
+      ? "전체 " + total + "건"
+      : total + "건 중 " + items.length + "건";
+    var box = $("list");
+    if (!total) {
+      box.innerHTML = '<div class="empty"><h2>아직 스크랩이 없어요</h2><p>오른쪽 위 ‘새 스크랩’ 버튼으로 첫 기사를 남겨 보세요.</p></div>';
+      return;
+    }
+    if (!items.length) {
+      box.innerHTML = '<div class="empty"><h2>조건에 맞는 스크랩이 없어요</h2><p>검색어나 필터를 바꿔 보세요.</p></div>';
+      return;
+    }
+    box.innerHTML = items.map(renderCard).join("");
+  }
+
+  function renderCard(e) {
+    var open = !!state.expanded[e.id];
+    var href = safeUrl(e.url);
+    var tags = (e.tags || []).map(function (t) { return '<span class="tag">' + escapeHtml(t) + "</span>"; }).join("");
+    var sub = [];
+    if (e.source) sub.push('<span>' + escapeHtml(e.source) + "</span>");
+    if (href) sub.push('<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer">원문 보기</a>');
+    var badge = needsFollowUp(e) ? '<span class="badge">Follow-up 필요</span>' : "";
+    return '<article class="card' + (open ? " open" : "") + '" id="card-' + escapeHtml(e.id) + '" data-id="' + escapeHtml(e.id) + '">' +
+      '<div class="card-head">' +
+        '<button type="button" class="card-toggle" data-toggle="' + escapeHtml(e.id) + '" aria-expanded="' + open + '">' +
+          '<div class="card-top">' +
+            (e.date ? '<span class="card-date">' + escapeHtml(formatDate(e.date)) + "</span>" : "") +
+            badge +
+            '<span class="chev" aria-hidden="true">▾</span>' +
+          "</div>" +
+          '<h2 class="card-title">' + escapeHtml(e.title) + "</h2>" +
+          (tags ? '<div class="card-tags">' + tags + "</div>" : "") +
+        "</button>" +
+        (sub.length ? '<div class="card-sub">' + sub.join(" · ") + "</div>" : "") +
+      "</div>" +
+      '<div class="card-body">' + renderCardBody(e) + "</div>" +
+    "</article>";
+  }
+
+  function block(label, html) {
+    if (!html) return "";
+    return '<div class="field-block"><dt>' + escapeHtml(label) + "</dt><dd>" + html + "</dd></div>";
+  }
+
+  function renderCardBody(e) {
+    var html = "";
+    if (e.keyNumbers) html += block("핵심 숫자", escapeHtml(e.keyNumbers));
+    if (e.what) html += block("무슨 일이 벌어졌나", escapeHtml(e.what));
+    if (e.why) html += block("왜 벌어졌나", escapeHtml(e.why));
+    var whoBits = [];
+    if (e.who && e.who.categories && e.who.categories.length) whoBits.push(escapeHtml(e.who.categories.join(", ")));
+    if (e.who && e.who.note) whoBits.push(escapeHtml(e.who.note));
+    if (whoBits.length) html += block("누가 영향을 받나", whoBits.join(" — "));
+    if (e.importance) html += block("왜 중요한가", escapeHtml(e.importance));
+    if (e.investFavorable || e.investUnfavorable || e.investReason) {
+      var inv = '<div class="invest-grid">';
+      if (e.investFavorable) inv += block("유리해질 수 있는 자산", escapeHtml(e.investFavorable));
+      if (e.investUnfavorable) inv += block("불리해질 수 있는 자산", escapeHtml(e.investUnfavorable));
+      inv += "</div>";
+      if (e.investReason) inv += block("그 이유", escapeHtml(e.investReason));
+      html += inv;
+    }
+    if (e.terms && e.terms.length) {
+      var terms = e.terms.map(function (t) {
+        return '<div class="term-item"><strong>' + escapeHtml(t.term) + "</strong>" +
+          (t.definition ? " — " + escapeHtml(t.definition) : "") + "</div>";
+      }).join("");
+      html += block("새로 배운 경제 용어", terms);
+    }
+    if (e.thought) html += block("내 생각·예측", escapeHtml(e.thought));
+    if (e.watch) html += block("지켜볼 것", escapeHtml(e.watch));
+    if (e.followUps && e.followUps.length) {
+      var fus = e.followUps.map(function (f) {
+        var link = safeUrl(f.url);
+        return '<div class="follow-item">' +
+          (f.date ? '<div class="when">' + escapeHtml(formatDate(f.date)) + "</div>" : "") +
+          (f.text ? "<div>" + escapeHtml(f.text) + "</div>" : "") +
+          (link ? '<div><a href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer">후속 기사</a></div>' : "") +
+        "</div>";
+      }).join("");
+      html += block("그 이후 (Follow-up)", fus);
+    }
+    if (e.relatedIds && e.relatedIds.length) {
+      var rel = e.relatedIds.map(function (id) {
+        var o = findEntry(id);
+        if (!o) return "";
+        return '<a href="#card-' + encodeURIComponent(o.id) + '" data-goto="' + escapeHtml(o.id) + '">' +
+          escapeHtml(o.date ? formatDate(o.date) + " · " : "") + escapeHtml(o.title) + "</a>";
+      }).filter(Boolean).map(function (a) { return "<div>" + a + "</div>"; }).join("");
+      if (rel) html += block("관련 스크랩", rel);
+    }
+    html += '<div class="card-actions">' +
+      '<button type="button" class="btn btn-sm" data-edit="' + escapeHtml(e.id) + '">수정</button>' +
+      '<button type="button" class="btn btn-sm btn-danger" data-delete="' + escapeHtml(e.id) + '">삭제</button>' +
+    "</div>";
+    return html;
+  }
+
+  function renderStats() {
+    var total = state.entries.length;
+    $("stat-total").textContent = "전체 " + total + "건";
+    var counts = usedTags();
+    var tags = Object.keys(counts).sort(function (a, b) {
+      return counts[b] - counts[a] || a.localeCompare(b, "ko");
+    });
+    var max = tags.reduce(function (m, t) { return Math.max(m, counts[t]); }, 0) || 1;
+    if (!tags.length) {
+      $("tag-bars").innerHTML = '<p class="stat-total">태그가 달린 스크랩이 아직 없어요.</p>';
+    } else {
+      $("tag-bars").innerHTML = tags.map(function (t) {
+        var w = Math.round(counts[t] / max * 100);
+        return '<div class="bar-row">' +
+          '<button type="button" class="bar-label" data-jump-tag="' + escapeHtml(t) + '">' + escapeHtml(t) + "</button>" +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + w + '%"></div></div>' +
+          '<div class="bar-n">' + counts[t] + "</div>" +
+        "</div>";
+      }).join("");
+    }
+    $("week-chart").innerHTML = renderWeekChart();
+  }
+
+  function startOfWeek(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var day = x.getDay();
+    var diff = day === 0 ? -6 : 1 - day;
+    x.setDate(x.getDate() + diff);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  }
+
+  function ymd(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function renderWeekChart() {
+    var weeks = 12;
+    var now = startOfWeek(new Date());
+    var data = [];
+    for (var i = weeks - 1; i >= 0; i--) {
+      var start = new Date(now);
+      start.setDate(now.getDate() - i * 7);
+      var end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      var s = ymd(start), e = ymd(end);
+      var n = state.entries.filter(function (en) { return en.date && en.date >= s && en.date <= e; }).length;
+      data.push({ start: start, end: end, n: n });
+    }
+    var max = data.reduce(function (m, d) { return Math.max(m, d.n); }, 0) || 1;
+    var W = 640, H = 200, padL = 28, padR = 8, padT = 16, padB = 36;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var gap = 8;
+    var bw = (innerW - gap * (weeks - 1)) / weeks;
+    var bars = data.map(function (d, i) {
+      var h = d.n ? (d.n / max) * innerH : 4;
+      var x = padL + i * (bw + gap);
+      var y = padT + innerH - h;
+      var label = (d.start.getMonth() + 1) + "/" + d.start.getDate();
+      var title = (d.start.getMonth() + 1) + "월 " + d.start.getDate() + "일–" + (d.end.getMonth() + 1) + "월 " + d.end.getDate() + "일 · " + d.n + "건";
+      return '<rect class="col' + (d.n ? "" : " empty") + '" x="' + x + '" y="' + y + '" width="' + bw + '" height="' + h + '"><title>' + escapeHtml(title) + "</title></rect>" +
+        '<text x="' + (x + bw / 2) + '" y="' + (H - 14) + '" text-anchor="middle">' + label + "</text>" +
+        (d.n ? '<text x="' + (x + bw / 2) + '" y="' + (y - 4) + '" text-anchor="middle" style="fill:var(--ink);font-size:11px">' + d.n + "</text>" : "");
+    }).join("");
+    return '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="최근 12주 주간 스크랩 수">' +
+      '<line class="axis" x1="' + padL + '" y1="' + (padT + innerH) + '" x2="' + (W - padR) + '" y2="' + (padT + innerH) + '" />' +
+      bars + "</svg>";
+  }
+
+  function termKey(t) { return trim(t).replace(/\s+/g, " ").toLowerCase(); }
+
+  function renderGlossary() {
+    var map = {};
+    state.entries.forEach(function (e) {
+      (e.terms || []).forEach(function (t) {
+        if (!t.term) return;
+        var k = termKey(t.term);
+        if (!map[k]) map[k] = { term: t.term, defs: [], entries: [] };
+        if (t.definition && map[k].defs.indexOf(t.definition) === -1) map[k].defs.push(t.definition);
+        if (map[k].entries.every(function (x) { return x.id !== e.id; })) map[k].entries.push(e);
+      });
+    });
+    var keys = Object.keys(map).sort(function (a, b) { return map[a].term.localeCompare(map[b].term, "ko"); });
+    var box = $("glossary");
+    if (!keys.length) {
+      box.innerHTML = '<div class="empty"><h2>아직 모인 용어가 없어요</h2><p>스크랩을 작성할 때 ‘새로 배운 경제 용어’를 남겨 보세요.</p></div>';
+      return;
+    }
+    box.innerHTML = '<p class="stat-total">용어 ' + keys.length + '개</p><div class="glossary-list">' + keys.map(function (k) {
+      var g = map[k];
+      var def = g.defs.length ? "<p>" + g.defs.map(escapeHtml).join(" / ") + "</p>" : "";
+      var links = g.entries.map(function (e) {
+        return '<a class="src-link" href="#card-' + encodeURIComponent(e.id) + '" data-goto="' + escapeHtml(e.id) + '">' +
+          escapeHtml(e.date ? formatDate(e.date) + " · " : "") + escapeHtml(e.title) + "</a>";
+      }).join("");
+      return '<div class="glossary-item"><h3>' + escapeHtml(g.term) + "</h3>" + def + "<div>" + links + "</div></div>";
+    }).join("") + "</div>";
+  }
+
+  function renderAll() {
+    if (state.view === "list") renderList();
+    if (state.view === "stats") renderStats();
+    if (state.view === "glossary") renderGlossary();
+  }
+
+  function setView(name) {
+    state.view = name;
+    ["list", "stats", "glossary"].forEach(function (v) {
+      $("view-" + v).hidden = v !== name;
+      $("tab-" + v).setAttribute("aria-selected", v === name ? "true" : "false");
+    });
+    renderAll();
+  }
+
+  function gotoEntry(id) {
+    state.filters = { q: "", tags: [], dateFrom: "", dateTo: "", needsFollowUp: false };
+    $("filter-q").value = "";
+    $("filter-from").value = "";
+    $("filter-to").value = "";
+    $("filter-followup").setAttribute("aria-pressed", "false");
+    state.expanded[id] = true;
+    setView("list");
+    var el = $("card-" + id);
+    if (el) {
+      el.classList.add("flash");
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(function () { el.classList.remove("flash"); }, 1500);
+    }
+  }
+
+  function renderFormTags() {
+    var extras = state.formTags.filter(function (t) { return PRESET_TAGS.indexOf(t) === -1; });
+    var tags = PRESET_TAGS.concat(extras);
+    $("f-tags").innerHTML = tags.map(function (t) {
+      var on = state.formTags.indexOf(t) !== -1;
+      var custom = PRESET_TAGS.indexOf(t) === -1;
+      return '<button type="button" class="chip' + (on ? " active" : "") + '" data-form-tag="' + escapeHtml(t) + '" aria-pressed="' + on + '">' +
+        escapeHtml(t) + (custom && on ? '<span class="x">×</span>' : "") + "</button>";
+    }).join("");
+  }
+
+  function addFormTag(t) {
+    t = trim(t);
+    if (!t) return;
+    if (state.formTags.indexOf(t) === -1) state.formTags.push(t);
+    renderFormTags();
+    $("f-tag-custom").value = "";
+  }
+
+  function termRowHtml(term, def) {
+    return '<div class="dyn-row term-row">' +
+      '<input type="text" class="term-name" placeholder="용어" value="' + escapeHtml(term || "") + '" />' +
+      '<input type="text" class="term-def" placeholder="뜻 (선택)" value="' + escapeHtml(def || "") + '" />' +
+      '<button type="button" class="btn btn-sm btn-ghost btn-remove-row">삭제</button>' +
+    "</div>";
+  }
+
+  function followRowHtml(f) {
+    f = f || {};
+    return '<div class="follow-row">' +
+      '<input type="date" class="fu-date" value="' + escapeHtml(f.date || todayISO()) + '" />' +
+      '<input type="text" class="fu-text" placeholder="후속 결과·메모" value="' + escapeHtml(f.text || "") + '" />' +
+      '<input type="url" class="fu-url" placeholder="후속 기사 링크 (선택)" value="' + escapeHtml(f.url || "") + '" />' +
+      '<button type="button" class="btn btn-sm btn-ghost btn-remove-row">삭제</button>' +
+    "</div>";
+  }
+
+  function addTermRow(term, def) {
+    $("f-terms").insertAdjacentHTML("beforeend", termRowHtml(term, def));
+  }
+  function addFollowRow(f) {
+    $("f-followups").insertAdjacentHTML("beforeend", followRowHtml(f));
+  }
+
+  function renderWho(selected) {
+    selected = selected || [];
+    $("f-who").innerHTML = WHO_OPTIONS.map(function (o, i) {
+      var id = "who-" + i;
+      var checked = selected.indexOf(o) !== -1 ? " checked" : "";
+      return '<label><input type="checkbox" name="who" value="' + escapeHtml(o) + '" id="' + id + '"' + checked + " /> " + escapeHtml(o) + "</label>";
+    }).join("");
+  }
+
+  function renderRelated(currentId, selected) {
+    selected = selected || [];
+    var others = state.entries.filter(function (e) { return e.id !== currentId; }).slice().sort(byDateDesc);
+    $("f-related-empty").hidden = others.length > 0;
+    $("f-related").innerHTML = others.map(function (e) {
+      var checked = selected.indexOf(e.id) !== -1 ? " checked" : "";
+      var label = (e.date ? formatDate(e.date) + " · " : "") + e.title;
+      return '<label><input type="checkbox" name="related" value="' + escapeHtml(e.id) + '"' + checked + " /> " + escapeHtml(label) + "</label>";
+    }).join("");
+  }
+
+  function resetForm() {
+    $("scrap-form").reset();
+    $("f-date").value = todayISO();
+    $("f-title").value = "";
+    state.formTags = [];
+    renderFormTags();
+    renderWho([]);
+    $("f-who-note").value = "";
+    $("f-terms").innerHTML = "";
+    addTermRow("", "");
+    $("f-followups").innerHTML = "";
+    renderRelated(null, []);
+    state.editingId = null;
+    $("form-title").textContent = "새 스크랩";
+  }
+
+  function fillForm(e) {
+    state.editingId = e.id;
+    $("form-title").textContent = "스크랩 수정";
+    $("f-date").value = e.date || "";
+    $("f-title").value = e.title || "";
+    $("f-source").value = e.source || "";
+    $("f-url").value = e.url || "";
+    state.formTags = (e.tags || []).slice();
+    renderFormTags();
+    $("f-key").value = e.keyNumbers || "";
+    $("f-what").value = e.what || "";
+    $("f-why").value = e.why || "";
+    renderWho(e.who && e.who.categories || []);
+    $("f-who-note").value = (e.who && e.who.note) || "";
+    $("f-importance").value = e.importance || "";
+    $("f-fav").value = e.investFavorable || "";
+    $("f-unfav").value = e.investUnfavorable || "";
+    $("f-reason").value = e.investReason || "";
+    $("f-terms").innerHTML = "";
+    if (e.terms && e.terms.length) e.terms.forEach(function (t) { addTermRow(t.term, t.definition); });
+    else addTermRow("", "");
+    $("f-thought").value = e.thought || "";
+    $("f-watch").value = e.watch || "";
+    $("f-followups").innerHTML = "";
+    (e.followUps || []).forEach(function (f) { addFollowRow(f); });
+    renderRelated(e.id, e.relatedIds || []);
+  }
+
+  function openForm(entry) {
+    if (entry) fillForm(entry); else resetForm();
+    var d = $("form-dialog");
+    if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+    setTimeout(function () { $("f-title").focus(); }, 30);
+  }
+
+  function closeForm() {
+    var d = $("form-dialog");
+    if (d.open && d.close) d.close();
+    else d.removeAttribute("open");
+    state.editingId = null;
+  }
+
+  function collectForm() {
+    var terms = [];
+    $("f-terms").querySelectorAll(".term-row").forEach(function (row) {
+      var term = trim(row.querySelector(".term-name").value);
+      var def = trim(row.querySelector(".term-def").value);
+      if (term) terms.push({ term: term, definition: def });
+    });
+    var followUps = [];
+    $("f-followups").querySelectorAll(".follow-row").forEach(function (row) {
+      var item = {
+        date: trim(row.querySelector(".fu-date").value),
+        text: trim(row.querySelector(".fu-text").value),
+        url: trim(row.querySelector(".fu-url").value)
+      };
+      if (item.date || item.text || item.url) followUps.push(item);
+    });
+    var whoCats = Array.prototype.map.call(document.querySelectorAll('#f-who input[name="who"]:checked'), function (el) { return el.value; });
+    var related = Array.prototype.map.call(document.querySelectorAll('#f-related input[name="related"]:checked'), function (el) { return el.value; });
+    var now = new Date().toISOString();
+    var prev = state.editingId ? findEntry(state.editingId) : null;
+    return normalizeEntry({
+      id: state.editingId || uid(),
+      date: $("f-date").value,
+      title: $("f-title").value,
+      source: $("f-source").value,
+      url: $("f-url").value,
+      tags: state.formTags.slice(),
+      keyNumbers: $("f-key").value,
+      what: $("f-what").value,
+      why: $("f-why").value,
+      who: { categories: whoCats, note: $("f-who-note").value },
+      importance: $("f-importance").value,
+      investFavorable: $("f-fav").value,
+      investUnfavorable: $("f-unfav").value,
+      investReason: $("f-reason").value,
+      terms: terms,
+      thought: $("f-thought").value,
+      watch: $("f-watch").value,
+      followUps: followUps,
+      relatedIds: related,
+      createdAt: prev ? prev.createdAt : now,
+      updatedAt: now,
+      isSeed: prev ? prev.isSeed : false
+    });
+  }
+
+  function onSubmit(ev) {
+    ev.preventDefault();
+    var title = trim($("f-title").value);
+    if (!title) {
+      $("f-title").focus();
+      toast("기사 제목은 필수예요.");
+      return;
+    }
+    var entry = collectForm();
+    if (!entry) {
+      toast("저장할 내용을 확인해 주세요.");
+      return;
+    }
+    var idx = state.entries.findIndex(function (e) { return e.id === entry.id; });
+    if (idx >= 0) state.entries[idx] = entry;
+    else state.entries.push(entry);
+    if (!save()) return;
+    state.expanded[entry.id] = true;
+    closeForm();
+    setView("list");
+    renderAll();
+    toast(idx >= 0 ? "스크랩을 수정했어요." : "스크랩을 저장했어요.");
+    setTimeout(function () {
+      var el = $("card-" + entry.id);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  }
+
+  function deleteEntry(id) {
+    var e = findEntry(id);
+    if (!e) return;
+    if (!window.confirm("‘" + e.title + "’ 스크랩을 삭제할까요? 이 작업은 되돌릴 수 없어요.")) return;
+    state.entries = state.entries.filter(function (x) { return x.id !== id; });
+    state.entries.forEach(function (x) {
+      x.relatedIds = (x.relatedIds || []).filter(function (rid) { return rid !== id; });
+    });
+    save();
+    renderAll();
+    toast("스크랩을 삭제했어요.");
+  }
+
+  function exportJson() {
+    var payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      entries: state.entries
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "경제뉴스스크랩-" + todayISO() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toast("JSON 파일을 내려받았어요.");
+  }
+
+  function importJson(text) {
+    var data;
+    try { data = JSON.parse(text); }
+    catch (err) { toast("올바른 JSON 파일이 아니에요."); return; }
+    var list = Array.isArray(data) ? data : (data && data.entries);
+    if (!Array.isArray(list)) { toast("스크랩 목록을 찾지 못했어요."); return; }
+    var added = 0, updated = 0, skipped = 0;
+    list.forEach(function (raw) {
+      var entry = normalizeEntry(raw);
+      if (!entry) { skipped++; return; }
+      var idx = state.entries.findIndex(function (e) { return e.id === entry.id; });
+      if (idx >= 0) {
+        entry.createdAt = state.entries[idx].createdAt || entry.createdAt;
+        state.entries[idx] = entry;
+        updated++;
+      } else {
+        state.entries.push(entry);
+        added++;
+      }
+    });
+    save();
+    renderAll();
+    var msg = "가져오기를 마쳤어요. 새로 추가 " + added + "건, 덮어씀 " + updated + "건";
+    if (skipped) msg += ", 건너뜀 " + skipped + "건";
+    toast(msg + ".");
+  }
+
+  function bind() {
+    $("tab-list").addEventListener("click", function () { setView("list"); });
+    $("tab-stats").addEventListener("click", function () { setView("stats"); });
+    $("tab-glossary").addEventListener("click", function () { setView("glossary"); });
+
+    $("btn-new").addEventListener("click", function () { openForm(null); });
+    $("btn-form-close").addEventListener("click", closeForm);
+    $("btn-form-cancel").addEventListener("click", closeForm);
+    $("scrap-form").addEventListener("submit", onSubmit);
+    $("form-dialog").addEventListener("cancel", function (ev) { ev.preventDefault(); closeForm(); });
+
+    $("btn-add-tag").addEventListener("click", function () { addFormTag($("f-tag-custom").value); });
+    $("f-tag-custom").addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); addFormTag($("f-tag-custom").value); }
+    });
+    $("f-tags").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-form-tag]");
+      if (!btn) return;
+      var t = btn.getAttribute("data-form-tag");
+      var i = state.formTags.indexOf(t);
+      if (i === -1) state.formTags.push(t);
+      else state.formTags.splice(i, 1);
+      renderFormTags();
+    });
+    $("btn-add-term").addEventListener("click", function () { addTermRow("", ""); });
+    $("btn-add-follow").addEventListener("click", function () { addFollowRow({ date: todayISO() }); });
+    $("f-terms").addEventListener("click", function (ev) {
+      if (ev.target.classList.contains("btn-remove-row")) ev.target.closest(".term-row").remove();
+    });
+    $("f-followups").addEventListener("click", function (ev) {
+      if (ev.target.classList.contains("btn-remove-row")) ev.target.closest(".follow-row").remove();
+    });
+
+    $("filter-q").addEventListener("input", function () {
+      state.filters.q = $("filter-q").value;
+      renderList();
+    });
+    $("filter-from").addEventListener("change", function () {
+      state.filters.dateFrom = $("filter-from").value;
+      renderList();
+    });
+    $("filter-to").addEventListener("change", function () {
+      state.filters.dateTo = $("filter-to").value;
+      renderList();
+    });
+    $("filter-followup").addEventListener("click", function () {
+      state.filters.needsFollowUp = !state.filters.needsFollowUp;
+      $("filter-followup").setAttribute("aria-pressed", state.filters.needsFollowUp ? "true" : "false");
+      renderList();
+    });
+    $("filter-tags").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-filter-tag]");
+      if (!btn) return;
+      var t = btn.getAttribute("data-filter-tag");
+      var i = state.filters.tags.indexOf(t);
+      if (i === -1) state.filters.tags.push(t);
+      else state.filters.tags.splice(i, 1);
+      renderList();
+    });
+    $("btn-clear-filters").addEventListener("click", function () {
+      state.filters = { q: "", tags: [], dateFrom: "", dateTo: "", needsFollowUp: false };
+      $("filter-q").value = "";
+      $("filter-from").value = "";
+      $("filter-to").value = "";
+      $("filter-followup").setAttribute("aria-pressed", "false");
+      renderList();
+    });
+
+    $("list").addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-stop]")) return;
+      var goto = ev.target.closest("[data-goto]");
+      if (goto) { ev.preventDefault(); gotoEntry(goto.getAttribute("data-goto")); return; }
+      var edit = ev.target.closest("[data-edit]");
+      if (edit) { openForm(findEntry(edit.getAttribute("data-edit"))); return; }
+      var del = ev.target.closest("[data-delete]");
+      if (del) { deleteEntry(del.getAttribute("data-delete")); return; }
+      var tog = ev.target.closest("[data-toggle]");
+      if (tog) {
+        var id = tog.getAttribute("data-toggle");
+        state.expanded[id] = !state.expanded[id];
+        renderList();
+      }
+    });
+
+    document.body.addEventListener("click", function (ev) {
+      var jump = ev.target.closest("[data-jump-tag]");
+      if (jump) {
+        state.filters = { q: "", tags: [jump.getAttribute("data-jump-tag")], dateFrom: "", dateTo: "", needsFollowUp: false };
+        $("filter-q").value = "";
+        $("filter-from").value = "";
+        $("filter-to").value = "";
+        $("filter-followup").setAttribute("aria-pressed", "false");
+        setView("list");
+        return;
+      }
+      var goto = ev.target.closest("#glossary [data-goto]");
+      if (goto) { ev.preventDefault(); gotoEntry(goto.getAttribute("data-goto")); }
+    });
+
+    $("btn-export").addEventListener("click", exportJson);
+    $("btn-import").addEventListener("click", function () { $("import-file").click(); });
+    $("import-file").addEventListener("change", function () {
+      var file = $("import-file").files && $("import-file").files[0];
+      $("import-file").value = "";
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () { importJson(String(reader.result || "")); };
+      reader.onerror = function () { toast("파일을 읽지 못했어요."); };
+      reader.readAsText(file, "utf-8");
+    });
+  }
+
+  load();
+  bind();
+  renderFormTags();
+  renderWho([]);
+  setView("list");
+  if (state.entries.length === 1 && state.entries[0].isSeed) {
+    state.expanded[state.entries[0].id] = true;
+    renderList();
+  }
+})();
+
+</script>
+</body>
+</html>
